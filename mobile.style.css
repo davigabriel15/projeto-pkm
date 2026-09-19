@@ -8,11 +8,12 @@
 }
 
 body {
+    overflow-y: hidden;
     background-image: url(imagens/plano_de_fundo.webp);
     background-size: cover;
     display: grid;
     width: 100vw;
-    height: 100vh;
+    height: 100dvh;
     grid-template-rows: repeat(5, 1fr);
     grid-template-columns: 2fr 4fr 2fr;
 }
