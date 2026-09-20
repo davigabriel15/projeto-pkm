@@ -25,16 +25,37 @@ let quemDeuMaiorLance = null;
 
 // Inicializa a interface quando o HTML carregar
 document.addEventListener("DOMContentLoaded", () => {
+    // 1. Atualiza os títulos dos times
     const elemJ1 = document.getElementById('titulo-j1');
     const elemJ2 = document.getElementById('titulo-j2');
-    
     if (elemJ1) elemJ1.innerText = nomeJ1;
     if (elemJ2) elemJ2.innerText = nomeJ2;
 
+    // 2. Atualiza os saldos na tela
     const elemSaldo1 = document.getElementById('saldo-j1');
     const elemSaldo2 = document.getElementById('saldo-j2');
     if (elemSaldo1) elemSaldo1.innerText = saldoJ1;
     if (elemSaldo2) elemSaldo2.innerText = saldoJ2;
+
+    // 3. ATUALIZA O TEXTO DOS BOTÕES DE OFERTA COM OS NOMES DOS JOGADORES
+    const btnJ1 = document.getElementById('btn-j1');
+    const btnJ2 = document.getElementById('btn-j2');
+
+    if (btnJ1) {
+        btnJ1.value = "Oferta " + nomeJ1;
+    } else {
+        // Fallback caso não tenha colocado o ID no HTML ainda
+        const btnQuery1 = document.querySelector(".btn-enviar[onclick='darLance(1)']");
+        if (btnQuery1) btnQuery1.value = "Oferta " + nomeJ1;
+    }
+
+    if (btnJ2) {
+        btnJ2.value = "Oferta " + nomeJ2;
+    } else {
+        // Fallback caso não tenha colocado o ID no HTML ainda
+        const btnQuery2 = document.querySelector(".btn-enviar[onclick='darLance(2)']");
+        if (btnQuery2) btnQuery2.value = "Oferta " + nomeJ2;
+    }
 
     exibirMensagem(`Bem-vindos ${nomeJ1} e ${nomeJ2}! Sorteiem o primeiro Pokémon.`);
 });
