@@ -20,6 +20,8 @@ body {
 
 /* Logo do Site */
 .logo {
+    background-color: white;
+    border-radius: ;
     display: flex;
     justify-content: center;
     align-items: center;

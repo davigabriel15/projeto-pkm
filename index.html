@@ -3,45 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Leilão Pokémon</title>
-    <link rel="stylesheet" href="mobile.style.css">
+    <title>Configurações - Leilão Pokémon</title>
+    <link rel="stylesheet" href="menu.style.css">
 </head>
 <body>
-    <div class="logo"><img src="imagens/pixil-frame-0.png" alt="Logo poke_draft"></div>
-    
-    <div class="time1"><h2>Time 1</h2></div>
-    
-    <!-- pokemon sorteado -->
-    <div class="pkm">
-        <img id="pokemon-img" src="" alt="Aguardando sorteio..." style="display: none;">
-        <h3 id="pokemon-nome">Clique em Sortear!</h3>
-        <button id="btn-sortear" onclick="sortearPokemon()">Sortear Pokémon</button>
-    </div>
-    
-    <div class="time2"><h2>Time 2</h2></div>
-    
-    <div class="dinheiro-rest-1">
-        <p>Saldo J1: R$ <span id="saldo-j1">100</span></p>
-    </div>
 
-    <div class="dinheiro-rest-2">
-        <p>Saldo J2: R$ <span id="saldo-j2">100</span></p>
-    </div>
-
-    <!-- lances -->
-    <div class="lance">
-        <h2>Seu lance</h2>
-        <input type="number" id="valor-lance" placeholder="R$">
-        <div class="desisão">
-            <input type="button" value="Oferta J1" class="btn-enviar" onclick="darLance(1)">
-            <input type="button" value="Oferta J2" class="btn-enviar" onclick="darLance(2)">
-            <input type="button" value="Desistir" class="btn-desistir" onclick="desistir()">
+    <div class="menu-container">
+        <div class="logo">
+            <img src="imagens/pixil-frame-0.png" alt="Logo poke_draft">
         </div>
-    </div>
-    <div class="situacao">
+        <form id="form-inicio" onsubmit="salvarEIniciar(event)">
+            
+            <div class="campo">
+                <label for="jogador1">Nome Jogador 1:</label>
+                <input type="text" id="jogador1" placeholder="Jogador 1" required>
+            </div>
 
+            <div class="campo">
+                <label for="jogador2">Nome Jogador 2:</label>
+                <input type="text" id="jogador2" placeholder="Jogador 2" required>
+            </div>
+
+            <div class="campo">
+                <label for="modo-jogo">Modo de Jogo:</label>
+                <select id="modo-jogo">
+                    <option value="padrao">Padrão (R$ 100)</option>
+                    <option value="pobre">Modo Pobre (R$ 20)</option>
+                    <option value="rapido">Modo Rápido (3 Pokémon - R$ 100)</option>
+                </select>
+            </div>
+
+            <div class="campo">
+                <label for="estagio-pkm">Estágio do Pokémon:</label>
+                <select id="estagio-pkm">
+                    <option value="normal">Estágio Sorteado (Normal)</option>
+                    <option value="final">Evolução Final (Ex: Charmander → Charizard)</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn-iniciar">Iniciar Leilão</button>
+        </form>
     </div>
 
-    <script src="script.js"></script>
+    <script>
+        function salvarEIniciar(event) {
+            event.preventDefault();
+
+            const j1 = document.getElementById('jogador1').value || "Jogador 1";
+            const j2 = document.getElementById('jogador2').value || "Jogador 2";
+            const modo = document.getElementById('modo-jogo').value;
+            const estagio = document.getElementById('estagio-pkm').value;
+
+            localStorage.setItem('pkm_jogador1', j1);
+            localStorage.setItem('pkm_jogador2', j2);
+            localStorage.setItem('pkm_modo', modo);
+            localStorage.setItem('pkm_estagio', estagio);
+
+            window.location.href = 'jogo.html';
+        }
+    </script>
 </body>
 </html>

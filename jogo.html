@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leilão Pokémon</title>
+    <link rel="stylesheet" href="mobile.style.css">
+</head>
+<body>
+    <div class="logo"><img src="imagens/pixil-frame-0.png" alt="Logo poke_draft"></div>
+    
+    <!-- Adicionado id="titulo-j1" para o JS trocar o nome do jogador sem alterar a classe -->
+    <div class="time1">
+        <h2 id="titulo-j1">Time 1</h2>
+    </div>
+    
+    <!-- pokemon sorteado -->
+    <div class="pkm">
+        <img id="pokemon-img" src="" alt="Aguardando sorteio..." style="display: none;">
+        <h3 id="pokemon-nome">Clique em Sortear!</h3>
+        <button id="btn-sortear" onclick="sortearPokemon()">Sortear Pokémon</button>
+    </div>
+    
+    <!-- Adicionado id="titulo-j2" para o JS trocar o nome do jogador sem alterar a classe -->
+    <div class="time2">
+        <h2 id="titulo-j2">Time 2</h2>
+    </div>
+    
+    <div class="dinheiro-rest-1">
+        <p>Saldo J1: R$ <span id="saldo-j1">100</span></p>
+    </div>
+
+    <div class="dinheiro-rest-2">
+        <p>Saldo J2: R$ <span id="saldo-j2">100</span></p>
+    </div>
+
+    <!-- lances -->
+    <div class="lance">
+        <h2>Seu lance</h2>
+        <input type="number" id="valor-lance" placeholder="R$">
+        <div class="desisão">
+            <input type="button" value="Oferta J1" class="btn-enviar" onclick="darLance(1)">
+            <input type="button" value="Oferta J2" class="btn-enviar" onclick="darLance(2)">
+            <input type="button" value="Desistir" class="btn-desistir" onclick="desistir()">
+        </div>
+    </div>
+    
+    <div class="situacao"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>

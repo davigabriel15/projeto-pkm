@@ -1,0 +1,115 @@
+/* ==========================================
+   MENU.CSS - ESTILO LIMPO E DIRETO
+   ========================================== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+body {
+    overflow-y: hidden;
+    background-color: #f4f4f9;
+    color: #333;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+/* Logo */
+.logo {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.logo img {
+    max-width: 180px;
+    height: auto;
+}
+
+/* Container Branco do Menu */
+.menu-container {
+    width: 100%;
+    max-width: 380px;
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 12px;
+    border: 2px solid lightseagreen;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+#form-inicio {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    width: 100%;
+}
+
+/* Estilo dos Campos */
+.campo {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+    text-align: left;
+}
+
+.campo label {
+    font-weight: bold;
+    font-size: 0.95rem;
+    color: #444;
+}
+
+.campo input, 
+.campo select {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 1rem;
+    background-color: #fff;
+    outline: none;
+}
+
+.campo input:focus, 
+.campo select:focus {
+    border-color: #e3350d;
+}
+
+/* Botão Iniciar */
+.btn-iniciar {
+    width: 100%;
+    padding: 12px;
+    margin-top: 10px;
+    border: none;
+    border-radius: 8px;
+    background-color: #e3350d;
+    color: white;
+    font-size: 1.1rem;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.btn-iniciar:active {
+    background-color: #b32707;
+}
+
+/* Ajuste para telas pequenas de celular */
+@media (max-height: 600px) {
+    body {
+        justify-content: flex-start;
+        padding-top: 10px;
+    }
+
+    .logo {
+        margin-bottom: 10px;
+    }
+
+    .logo img {
+        max-width: 140px;
+    }
+}

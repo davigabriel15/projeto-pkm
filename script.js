@@ -1,14 +1,46 @@
 // ==========================================
-// 1. VARIÁVEIS GLOBAIS DE ESTADO
+// 1. CARREGAR DADOS DA TELA INICIAL
 // ==========================================
+let nomeJ1 = localStorage.getItem('pkm_jogador1') || "Jogador 1";
+let nomeJ2 = localStorage.getItem('pkm_jogador2') || "Jogador 2";
+let modoJogo = localStorage.getItem('pkm_modo') || "padrao";
+let estagioEvolucao = localStorage.getItem('pkm_estagio') || "normal"; // "normal" ou "final"
+
+// Configura o saldo inicial de acordo com o modo
+let saldoInicial = 100;
+if (modoJogo === "pobre") {
+    saldoInicial = 20;
+}
+
+let saldoJ1 = saldoInicial;
+let saldoJ2 = saldoInicial;
+
+// Configura o limite de Pokémon no time
+let limitePokemon = modoJogo === "rapido" ? 3 : 6;
+
+// Variáveis de estado do jogo
 let pokemonAtual = null;
-let saldoJ1 = 100;
-let saldoJ2 = 100;
 let lanceAtual = 0;
 let quemDeuMaiorLance = null;
 
+// Inicializa a interface quando o HTML carregar
+document.addEventListener("DOMContentLoaded", () => {
+    const elemJ1 = document.getElementById('titulo-j1');
+    const elemJ2 = document.getElementById('titulo-j2');
+    
+    if (elemJ1) elemJ1.innerText = nomeJ1;
+    if (elemJ2) elemJ2.innerText = nomeJ2;
+
+    const elemSaldo1 = document.getElementById('saldo-j1');
+    const elemSaldo2 = document.getElementById('saldo-j2');
+    if (elemSaldo1) elemSaldo1.innerText = saldoJ1;
+    if (elemSaldo2) elemSaldo2.innerText = saldoJ2;
+
+    exibirMensagem(`Bem-vindos ${nomeJ1} e ${nomeJ2}! Sorteiem o primeiro Pokémon.`);
+});
+
 // ==========================================
-// 2. FUNÇÃO AUXILIAR DE MENSAGENS NA TELA
+// 2. FUNÇÕES AUXILIARES
 // ==========================================
 function exibirMensagem(texto) {
     const divSituacao = document.querySelector('.situacao');
@@ -17,25 +49,55 @@ function exibirMensagem(texto) {
     }
 }
 
-// ==========================================
-// 3. VERIFICAR QUANTIDADE DE POKÉMON NOS TIMES
-// ==========================================
 function obterQtdPokemon(timeNumero) {
     const time = document.querySelector(`.time${timeNumero}`);
     if (!time) return 0;
     return time.querySelectorAll('.pkm-time').length;
 }
 
+// Busca a evolução final na PokéAPI
+async function obterEvolucaoFinal(pokemonId) {
+    try {
+        // 1. Busca a espécie para pegar a URL da cadeia de evolução
+        const resEspecie = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${pokemonId}`);
+        const dadosEspecie = await resEspecie.json();
+        
+        // 2. Busca a cadeia de evolução completa
+        const resCadeia = await fetch(dadosEspecie.evolution_chain.url);
+        const dadosCadeia = await resCadeia.json();
+
+        // 3. Navega até o último estágio disponível da linha evolutiva
+        let noAtual = dadosCadeia.chain;
+        while (noAtual.evolves_to && noAtual.evolves_to.length > 0) {
+            // Caso existam várias evoluções (ex: Eevee), pega a primeira da lista
+            noAtual = noAtual.evolves_to[0];
+        }
+
+        // 4. Busca os dados do Pokémon final para pegar a artwork oficial
+        const nomeFinal = noAtual.species.name;
+        const resFinal = await fetch(`https://pokeapi.co/api/v2/pokemon/${nomeFinal}`);
+        const dadosFinal = await resFinal.json();
+
+        return {
+            nome: dadosFinal.name.toUpperCase(),
+            imagem: dadosFinal.sprites.other['official-artwork'].front_default
+        };
+    } catch (erro) {
+        console.error("Erro ao buscar evolução final:", erro);
+        // Em caso de erro na API, retorna os dados normais
+        return pokemonAtual;
+    }
+}
+
 // ==========================================
-// 4. FUNÇÃO DE SORTEIO
+// 3. FUNÇÃO DE SORTEIO
 // ==========================================
 async function sortearPokemon() {
     const qtdJ1 = obterQtdPokemon(1);
     const qtdJ2 = obterQtdPokemon(2);
 
-    // Se ambos já têm 6 Pokémon, o leilão acabou!
-    if (qtdJ1 >= 6 && qtdJ2 >= 6) {
-        exibirMensagem("🏆 O LEILÃO ACABOU! Ambos os times têm 6 Pokémon!");
+    if (qtdJ1 >= limitePokemon && qtdJ2 >= limitePokemon) {
+        exibirMensagem(`🏆 O LEILÃO ACABOU! Ambos os times atingiram o limite de ${limitePokemon} Pokémon!`);
         return;
     }
 
@@ -69,11 +131,10 @@ async function sortearPokemon() {
             nomeElement.innerText = `#${pokemonAtual.id} - ${pokemonAtual.nome}`;
         }
 
-        // Avisa de quem é a vez caso um time já esteja cheio
-        if (qtdJ1 >= 6) {
-            exibirMensagem(`Time 1 cheio! Apenas o Jogador 2 pode dar lances para ${pokemonAtual.nome}.`);
-        } else if (qtdJ2 >= 6) {
-            exibirMensagem(`Time 2 cheio! Apenas o Jogador 1 pode dar lances para ${pokemonAtual.nome}.`);
+        if (qtdJ1 >= limitePokemon) {
+            exibirMensagem(`Time de ${nomeJ1} cheio! Apenas ${nomeJ2} pode dar lances para ${pokemonAtual.nome}.`);
+        } else if (qtdJ2 >= limitePokemon) {
+            exibirMensagem(`Time de ${nomeJ2} cheio! Apenas ${nomeJ1} pode dar lances para ${pokemonAtual.nome}.`);
         } else {
             exibirMensagem(`Leilão iniciado para ${pokemonAtual.nome}! Faça sua oferta.`);
         }
@@ -85,7 +146,7 @@ async function sortearPokemon() {
 }
 
 // ==========================================
-// 5. REGRA DE LANCES E COMPRA
+// 4. LANCES E FINALIZAÇÃO
 // ==========================================
 function darLance(jogador) {
     if (!pokemonAtual) {
@@ -95,14 +156,14 @@ function darLance(jogador) {
 
     const qtdJ1 = obterQtdPokemon(1);
     const qtdJ2 = obterQtdPokemon(2);
+    const nomeJogador = jogador === 1 ? nomeJ1 : nomeJ2;
 
-    // Validação 0: Time do jogador já está cheio
-    if (jogador === 1 && qtdJ1 >= 6) {
-        exibirMensagem("Jogador 1 já tem 6 Pokémon! Seu time está completo.");
+    if (jogador === 1 && qtdJ1 >= limitePokemon) {
+        exibirMensagem(`${nomeJ1} já tem ${limitePokemon} Pokémon! Seu time está completo.`);
         return;
     }
-    if (jogador === 2 && qtdJ2 >= 6) {
-        exibirMensagem("Jogador 2 já tem 6 Pokémon! Seu time está completo.");
+    if (jogador === 2 && qtdJ2 >= limitePokemon) {
+        exibirMensagem(`${nomeJ2} já tem ${limitePokemon} Pokémon! Seu time está completo.`);
         return;
     }
 
@@ -111,37 +172,32 @@ function darLance(jogador) {
 
     const valorDigitado = parseInt(inputValor.value);
 
-    // Validação 1: Valor válido
     if (isNaN(valorDigitado) || valorDigitado <= 0) {
         exibirMensagem("Digite um valor válido para o lance!");
         return;
     }
 
-    // Validação 2: Lance maior que o atual
     if (valorDigitado <= lanceAtual) {
         exibirMensagem(`O lance deve ser maior que o lance atual (R$ ${lanceAtual})!`);
         return;
     }
 
-    // Validação 3: Saldo suficiente
     const saldoDisponivel = (jogador === 1) ? saldoJ1 : saldoJ2;
     if (valorDigitado > saldoDisponivel) {
-        exibirMensagem(`Jogador ${jogador} não tem saldo suficiente! Saldo: R$ ${saldoDisponivel}`);
+        exibirMensagem(`${nomeJogador} não tem saldo suficiente! Saldo disponível: R$ ${saldoDisponivel}`);
         return;
     }
 
-    // Atualiza o estado
     lanceAtual = valorDigitado;
     quemDeuMaiorLance = jogador;
     inputValor.value = '';
 
-    // Regra especial: Se o outro time JÁ ESTÁ CHEIO, a compra é direta pois não há disputa!
-    if ((jogador === 1 && qtdJ2 >= 6) || (jogador === 2 && qtdJ1 >= 6)) {
+    if ((jogador === 1 && qtdJ2 >= limitePokemon) || (jogador === 2 && qtdJ1 >= limitePokemon)) {
         finalizarVenda(jogador, lanceAtual);
         return;
     }
 
-    exibirMensagem(`Jogador ${jogador} assumiu o leilão com R$ ${lanceAtual}!`);
+    exibirMensagem(`${nomeJogador} assumiu o leilão com R$ ${lanceAtual}!`);
 }
 
 function desistir() {
@@ -154,14 +210,23 @@ function desistir() {
     finalizarVenda(jogadorVencedor, lanceAtual);
 }
 
-function finalizarVenda(jogadorVencedor, valorFinal) {
+async function finalizarVenda(jogadorVencedor, valorFinal) {
+    const nomeVencedor = jogadorVencedor === 1 ? nomeJ1 : nomeJ2;
+    let pokemonParaAdicionar = pokemonAtual;
+
+    // Se a opção de evolução final estiver ativada, busca os dados da evolução final
+    if (estagioEvolucao === "final") {
+        exibirMensagem(`Processando evolução final de ${pokemonAtual.nome}...`);
+        pokemonParaAdicionar = await obterEvolucaoFinal(pokemonAtual.id);
+    }
+
     if (jogadorVencedor === 1) {
         saldoJ1 -= valorFinal;
         document.getElementById('saldo-j1').innerText = saldoJ1;
         
         const time1 = document.querySelector('.time1');
         if (time1) {
-            time1.innerHTML += `<img src="${pokemonAtual.imagem}" alt="${pokemonAtual.nome}" class="pkm-time" title="${pokemonAtual.nome} (R$${valorFinal})">`;
+            time1.innerHTML += `<img src="${pokemonParaAdicionar.imagem}" alt="${pokemonParaAdicionar.nome}" class="pkm-time" title="${pokemonParaAdicionar.nome} (R$${valorFinal})">`;
         }
     } else {
         saldoJ2 -= valorFinal;
@@ -169,13 +234,12 @@ function finalizarVenda(jogadorVencedor, valorFinal) {
         
         const time2 = document.querySelector('.time2');
         if (time2) {
-            time2.innerHTML += `<img src="${pokemonAtual.imagem}" alt="${pokemonAtual.nome}" class="pkm-time" title="${pokemonAtual.nome} (R$${valorFinal})">`;
+            time2.innerHTML += `<img src="${pokemonParaAdicionar.imagem}" alt="${pokemonParaAdicionar.nome}" class="pkm-time" title="${pokemonParaAdicionar.nome} (R$${valorFinal})">`;
         }
     }
 
-    exibirMensagem(`🎉 VENDIDO! Jogador ${jogadorVencedor} comprou ${pokemonAtual.nome} por R$ ${valorFinal}!`);
+    exibirMensagem(`🎉 VENDIDO! ${nomeVencedor} comprou ${pokemonParaAdicionar.nome} por R$ ${valorFinal}!`);
 
-    // Sorteia o próximo após 2.5 segundos
     setTimeout(() => {
         sortearPokemon();
     }, 2500);
