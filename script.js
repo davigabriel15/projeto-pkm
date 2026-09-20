@@ -1,14 +1,4 @@
-// O script.js vai ler o firebaseConfig que está definido no config.js
-try {
-  if (typeof firebase !== "undefined" && codigoSala && typeof firebaseConfig !== "undefined") {
-    firebase.initializeApp(firebaseConfig);
-    database = firebase.database();
-    salaRef = database.ref(`salas/${codigoSala}`);
-  }
-} catch (e) {
-  console.warn("Modo Local ativo ou erro no Firebase:", e);
-}
-// 1. CARREGAR DADOS DA SESSÃO LOCAL
+// 1. PRIMEIRO: Declarar todas as variáveis globais e do localStorage
 let meuNome = localStorage.getItem('pkm_meu_nome') || localStorage.getItem('pkm_jogador1') || "Jogador 1";
 let nomeJ2Local = localStorage.getItem('pkm_jogador2') || "Jogador 2";
 let codigoSala = localStorage.getItem('pkm_sala_id') || "";
@@ -30,9 +20,9 @@ let leilaoAtual = {
   time2: []
 };
 
-// Tenta conectar ao Firebase se houver código de sala
+// 2. SEGUNDO: Conectar ao Firebase usando a variável codigoSala já inicializada
 try {
-  if (typeof firebase !== "undefined" && codigoSala) {
+  if (typeof firebase !== "undefined" && codigoSala && typeof firebaseConfig !== "undefined") {
     firebase.initializeApp(firebaseConfig);
     database = firebase.database();
     salaRef = database.ref(`salas/${codigoSala}`);
@@ -41,7 +31,7 @@ try {
   console.warn("Modo Local ativo ou erro no Firebase:", e);
 }
 
-// 2. CONECTAR E CONFIGURAR INTERFACE
+// 3. TERCEIRO: CONECTAR E CONFIGURAR INTERFACE
 document.addEventListener("DOMContentLoaded", () => {
   exibirCodigoSala();
 
@@ -145,7 +135,7 @@ function configurarModoLocal() {
   exibirMensagem(`Bem-vindos ${meuNome} e ${nomeJ2Local}! Sorteiem o primeiro Pokémon.`);
 }
 
-// 3. ESCUTAR MUDANÇAS ONLINE (FIREBASE)
+// 4. ESCUTAR MUDANÇAS ONLINE (FIREBASE)
 function escutarAtualizacoesSala() {
   salaRef.on("value", (snapshot) => {
     const dados = snapshot.val();
@@ -183,7 +173,6 @@ function escutarAtualizacoesSala() {
     atualizarHTMLTime(1, dados.time1 || [], nomeJ1);
     atualizarHTMLTime(2, dados.time2 || [], nomeJ2);
 
-    // Gatilho automático da batalha online se ambos atingirem 6 Pokémon
     if (dados.time1 && dados.time1.length >= 6 && dados.time2 && dados.time2.length >= 6) {
       const modal = document.getElementById('modal-batalha');
       if (modal && modal.style.display !== 'flex') {
@@ -234,7 +223,7 @@ function atualizarHTMLTime(num, lista, nomeJogador) {
   timeElem.innerHTML = `<h2 id="titulo-j${num}">${nomeJogador} (${lista.length}/6)</h2>${htmlImagens}`;
 }
 
-// 4. VERIFICAÇÃO DE EVOLUÇÃO FINAL
+// 5. VERIFICAÇÃO DE EVOLUÇÃO FINAL
 async function ehEvolucaoFinal(pokemonId) {
   try {
     const resEspecie = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${pokemonId}/`);
@@ -301,7 +290,7 @@ async function buscarProximoPokemonValido() {
   return novoPokemon;
 }
 
-// 5. AÇÕES DO LEILÃO
+// 6. AÇÕES DO LEILÃO
 async function sortearPokemon() {
   exibirMensagem("Sorteando novo Pokémon para o leilão...");
   const novoPokemon = await buscarProximoPokemonValido();
@@ -417,7 +406,6 @@ function darLance(jogador) {
 
 function desistir() {
   if (salaRef) {
-    // MODO ONLINE
     salaRef.once("value").then((snapshot) => {
       const dados = snapshot.val();
       if (!dados || !dados.pokemonAtual || !dados.quemDeuMaiorLance) {
@@ -425,7 +413,6 @@ function desistir() {
         return;
       }
 
-      // REGRA: O jogador NÃO pode desistir/arrematar da sua própria oferta
       if (dados.quemDeuMaiorLance === meuNumeroJogador) {
         exibirMensagem("Você não pode desistir da sua própria oferta! Aguarde o oponente.");
         return;
@@ -434,7 +421,6 @@ function desistir() {
       finalizarVenda(dados.quemDeuMaiorLance, dados.lanceAtual);
     });
   } else {
-    // MODO LOCAL
     if (!leilaoAtual.pokemon || !leilaoAtual.quemDeuMaiorLance) {
       exibirMensagem("Não há nenhum lance ativo para arrematar!");
       return;
@@ -470,7 +456,6 @@ function desistir() {
     leilaoAtual.quemDeuMaiorLance = null;
     limparTelaPokemon();
 
-    // Gatilho automático da batalha local se ambos atingirem 6 Pokémon
     if (leilaoAtual.time1.length >= 6 && leilaoAtual.time2.length >= 6) {
       exibirMensagem(`⚔️ Times completos! Iniciando a Batalha Final...`);
       setTimeout(() => {
@@ -535,7 +520,7 @@ async function finalizarVenda(jogadorVencedor, valorFinal) {
   });
 }
 
-// 6. SIMULADOR DE BATALHA AUTOMÁTICA
+// 7. SIMULADOR DE BATALHA AUTOMÁTICA
 async function carregarStatusPokemon(id) {
   try {
     const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
