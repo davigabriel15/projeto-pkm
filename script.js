@@ -54,7 +54,6 @@ document.addEventListener("DOMContentLoaded", () => {
       const agora = Date.now();
       const umDiaEmMs = 24 * 60 * 60 * 1000;
 
-      // Limpeza de salas velhas (>24h)
       if (dados.ultimaAtualizacao && (agora - dados.ultimaAtualizacao > umDiaEmMs)) {
         salaRef.remove();
         window.location.reload();
@@ -185,6 +184,14 @@ function escutarAtualizacoesSala() {
 
     atualizarHTMLTime(1, dados.time1 || [], nomeJ1);
     atualizarHTMLTime(2, dados.time2 || [], nomeJ2);
+
+    // Gatilho automático da batalha online se ambos atingirem 6 Pokémon
+    if (dados.time1 && dados.time1.length >= 6 && dados.time2 && dados.time2.length >= 6) {
+      const modal = document.getElementById('modal-batalha');
+      if (modal && modal.style.display !== 'flex') {
+        iniciarBatalhaAutomatica(dados.time1, dados.time2, nomeJ1, nomeJ2);
+      }
+    }
   });
 }
 
@@ -229,7 +236,7 @@ function atualizarHTMLTime(num, lista, nomeJogador) {
   timeElem.innerHTML = `<h2 id="titulo-j${num}">${nomeJogador} (${lista.length}/6)</h2>${htmlImagens}`;
 }
 
-// 4. VERIFICAÇÃO SE É EVOLUÇÃO FINAL
+// 4. VERIFICAÇÃO DE EVOLUÇÃO FINAL
 async function ehEvolucaoFinal(pokemonId) {
   try {
     const resEspecie = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${pokemonId}/`);
@@ -256,7 +263,6 @@ async function ehEvolucaoFinal(pokemonId) {
   }
 }
 
-// Função utilitária para obter um Pokémon válido conforme os filtros
 async function buscarProximoPokemonValido() {
   let pokemonValido = false;
   let tentativas = 0;
@@ -275,13 +281,9 @@ async function buscarProximoPokemonValido() {
 
       if (estagioEvolucao === "finais") {
         const ehFinal = await ehEvolucaoFinal(idAleatorio);
-        if (ehFinal) {
-          pokemonValido = true;
-        }
+        if (ehFinal) pokemonValido = true;
       } else if (estagioEvolucao === "lendarios") {
-        if (dadosEspecie.is_legendary || dadosEspecie.is_mythical) {
-          pokemonValido = true;
-        }
+        if (dadosEspecie.is_legendary || dadosEspecie.is_mythical) pokemonValido = true;
       } else {
         pokemonValido = true;
       }
@@ -294,7 +296,7 @@ async function buscarProximoPokemonValido() {
         };
       }
     } catch (erro) {
-      console.warn("Tentativa de sorteio falhou, tentando outro...", erro);
+      console.warn("Tentativa de sorteio falhou...", erro);
     }
   }
 
@@ -307,7 +309,7 @@ async function sortearPokemon() {
   const novoPokemon = await buscarProximoPokemonValido();
 
   if (!novoPokemon) {
-    exibirMensagem("Erro ao encontrar um Pokémon com o filtro selecionado. Tente novamente.");
+    exibirMensagem("Erro ao encontrar um Pokémon com o filtro selecionado.");
     return;
   }
 
@@ -336,7 +338,6 @@ function darLance(jogador) {
   if (isNaN(valorDigitado) || valorDigitado <= 0) return;
 
   if (salaRef) {
-    // MODO ONLINE
     if (jogador !== meuNumeroJogador) {
       exibirMensagem("Você só pode dar lances no seu próprio botão!");
       return;
@@ -350,8 +351,6 @@ function darLance(jogador) {
       }
 
       const timeAtual = jogador === 1 ? (dados.time1 || []) : (dados.time2 || []);
-      
-      // REGRA: Máximo de 6 Pokémon por time
       if (timeAtual.length >= 6) {
         exibirMensagem("Seu time já está cheio! (Máximo de 6 Pokémon)");
         return;
@@ -380,15 +379,12 @@ function darLance(jogador) {
       });
     });
   } else {
-    // MODO LOCAL (1 Tela)
     if (!leilaoAtual.pokemon) {
       exibirMensagem("Sorteie um Pokémon antes de dar um lance!");
       return;
     }
 
     const timeAtual = jogador === 1 ? leilaoAtual.time1 : leilaoAtual.time2;
-
-    // REGRA: Máximo de 6 Pokémon por time
     if (timeAtual.length >= 6) {
       exibirMensagem("Seu time já está cheio! (Máximo de 6 Pokémon)");
       return;
@@ -430,6 +426,13 @@ function desistir() {
         exibirMensagem("Não há nenhum lance ativo para arrematar!");
         return;
       }
+
+      // REGRA: O jogador NÃO pode desistir/arrematar da sua própria oferta
+      if (dados.quemDeuMaiorLance === meuNumeroJogador) {
+        exibirMensagem("Você não pode desistir da sua própria oferta! Aguarde o oponente.");
+        return;
+      }
+
       finalizarVenda(dados.quemDeuMaiorLance, dados.lanceAtual);
     });
   } else {
@@ -468,6 +471,14 @@ function desistir() {
     leilaoAtual.lanceAtual = 0;
     leilaoAtual.quemDeuMaiorLance = null;
     limparTelaPokemon();
+
+    // Gatilho automático da batalha local se ambos atingirem 6 Pokémon
+    if (leilaoAtual.time1.length >= 6 && leilaoAtual.time2.length >= 6) {
+      exibirMensagem(`⚔️ Times completos! Iniciando a Batalha Final...`);
+      setTimeout(() => {
+        iniciarBatalhaAutomatica(leilaoAtual.time1, leilaoAtual.time2, meuNome, nomeJ2Local);
+      }, 1500);
+    }
   }
 }
 
@@ -494,7 +505,6 @@ async function finalizarVenda(jogadorVencedor, valorFinal) {
 
     const nomeVencedor = jogadorVencedor === 1 ? dados.jogador1 : dados.jogador2;
 
-    // Se ambos já tiverem 6 Pokémon, encerra sem novos sorteios
     if (time1.length >= 6 && time2.length >= 6) {
       salaRef.update({
         saldoJ1: novoSaldoJ1,
@@ -504,14 +514,13 @@ async function finalizarVenda(jogadorVencedor, valorFinal) {
         pokemonAtual: null,
         lanceAtual: 0,
         quemDeuMaiorLance: null,
-        mensagem: `🎉 VENDIDO! ${nomeVencedor} comprou ${pkmFinal.nome} por R$ ${valorFinal}! Ambos os times estão completos!`,
+        mensagem: `🎉 FIM DO LEILÃO! ${nomeVencedor} comprou ${pkmFinal.nome}! Times completos!`,
         ultimaAtualizacao: Date.now()
       });
       return;
     }
 
-    // SORTEIO AUTOMÁTICO DO PRÓXIMO POKÉMON PÓS-COMPRA
-    exibirMensagem(`🎉 VENDIDO para ${nomeVencedor}! Sorteando o próximo Pokémon...`);
+    exibirMensagem(`🎉 VENDIDO para ${nomeVencedor}! Sorteando o próximo...`);
     const proximoPokemon = await buscarProximoPokemonValido();
 
     salaRef.update({
@@ -526,4 +535,91 @@ async function finalizarVenda(jogadorVencedor, valorFinal) {
       ultimaAtualizacao: Date.now()
     });
   });
+}
+
+// 6. SIMULADOR DE BATALHA AUTOMÁTICA
+async function carregarStatusPokemon(id) {
+  try {
+    const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
+    const dados = await res.json();
+    return {
+      hp: dados.stats[0].base_stat * 2 + 50,
+      maxHp: dados.stats[0].base_stat * 2 + 50,
+      ataque: dados.stats[1].base_stat,
+      defesa: dados.stats[2].base_stat,
+      velocidade: dados.stats[5].base_stat
+    };
+  } catch (e) {
+    return { hp: 150, maxHp: 150, ataque: 80, defesa: 70, velocidade: 80 };
+  }
+}
+
+async function iniciarBatalhaAutomatica(time1, time2, nome1, nome2) {
+  const modal = document.getElementById('modal-batalha');
+  const log = document.getElementById('log-batalha');
+  if (modal) modal.style.display = 'flex';
+
+  document.getElementById('batalha-nome-j1').innerText = nome1;
+  document.getElementById('batalha-nome-j2').innerText = nome2;
+
+  log.innerHTML = "<p>⚔️ Carregando status dos Pokémon para o combate...</p>";
+
+  let lutadores1 = await Promise.all(time1.map(async p => ({ ...p, status: await carregarStatusPokemon(p.id) })));
+  let lutadores2 = await Promise.all(time2.map(async p => ({ ...p, status: await carregarStatusPokemon(p.id) })));
+
+  let i = 0, j = 0;
+
+  while (i < lutadores1.length && j < lutadores2.length) {
+    let p1 = lutadores1[i];
+    let p2 = lutadores2[j];
+
+    document.getElementById('batalha-img-pkm1').src = p1.imagem;
+    document.getElementById('batalha-nome-pkm1').innerText = p1.nome;
+    document.getElementById('batalha-img-pkm2').src = p2.imagem;
+    document.getElementById('batalha-nome-pkm2').innerText = p2.nome;
+
+    log.innerHTML += `<p style="color: #ffcb05;"><strong>Entram na arena:</strong> ${p1.nome} vs ${p2.nome}!</p>`;
+    log.scrollTop = log.scrollHeight;
+
+    while (p1.status.hp > 0 && p2.status.hp > 0) {
+      await new Promise(r => setTimeout(r, 800));
+
+      let primeiro = p1.status.velocidade >= p2.status.velocidade ? p1 : p2;
+      let segundo = primeiro === p1 ? p2 : p1;
+
+      let dano1 = Math.max(10, Math.floor(primeiro.status.ataque * 0.5 - segundo.status.defesa * 0.2));
+      segundo.status.hp -= dano1;
+      log.innerHTML += `<p>💥 <strong>${primeiro.nome}</strong> atacou ${segundo.nome} causando ${dano1} de dano!</p>`;
+
+      if (segundo.status.hp <= 0) break;
+
+      let dano2 = Math.max(10, Math.floor(segundo.status.ataque * 0.5 - primeiro.status.defesa * 0.2));
+      primeiro.status.hp -= dano2;
+      log.innerHTML += `<p>💥 <strong>${segundo.nome}</strong> contra-atacou causando ${dano2} de dano!</p>`;
+
+      document.getElementById('hp-bar-1').style.width = `${Math.max(0, (p1.status.hp / p1.status.maxHp) * 100)}%`;
+      document.getElementById('hp-bar-2').style.width = `${Math.max(0, (p2.status.hp / p2.status.maxHp) * 100)}%`;
+      log.scrollTop = log.scrollHeight;
+    }
+
+    if (p1.status.hp <= 0) {
+      log.innerHTML += `<p style="color: #ff4d4d;">☠️ ${p1.nome} desmaiou!</p>`;
+      i++;
+    }
+    if (p2.status.hp <= 0) {
+      log.innerHTML += `<p style="color: #ff4d4d;">☠️ ${p2.nome} desmaiou!</p>`;
+      j++;
+    }
+  }
+
+  const vencedor = i < lutadores1.length ? nome1 : nome2;
+  log.innerHTML += `<h3 style="color: #4caf50; font-size: 18px;">🏆 FIM DE JOGO! ${vencedor} VENCEU A BATALHA!</h3>`;
+  log.scrollTop = log.scrollHeight;
+
+  document.getElementById('btn-fechar-batalha').style.display = 'inline-block';
+}
+
+function fecharModalBatalha() {
+  document.getElementById('modal-batalha').style.display = 'none';
+  window.location.href = "index.html";
 }

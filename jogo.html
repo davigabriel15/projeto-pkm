@@ -51,6 +51,36 @@
     </div>
     
     <div class="situacao"></div>
+    <!-- Modal de Batalha Automática -->
+<div id="modal-batalha" class="modal-batalha" style="display: none;">
+  <div class="conteudo-batalha">
+    <h2>⚔️ SIMULADOR DE BATALHA ⚔️</h2>
+    
+    <div class="arena">
+      <div class="combatente p1">
+        <h3 id="batalha-nome-j1">Jogador 1</h3>
+        <img id="batalha-img-pkm1" src="" alt="Pokemon J1">
+        <p id="batalha-nome-pkm1">-</p>
+        <div class="barra-hp"><div id="hp-bar-1" class="hp-fill"></div></div>
+      </div>
+
+      <div class="vs">VS</div>
+
+      <div class="combatente p2">
+        <h3 id="batalha-nome-j2">Jogador 2</h3>
+        <img id="batalha-img-pkm2" src="" alt="Pokemon J2">
+        <p id="batalha-nome-pkm2">-</p>
+        <div class="barra-hp"><div id="hp-bar-2" class="hp-fill"></div></div>
+      </div>
+    </div>
+
+    <div id="log-batalha" class="log-batalha">
+      <p>Aguardando início da batalha...</p>
+    </div>
+
+    <button id="btn-fechar-batalha" onclick="fecharModalBatalha()" style="display: none;">Fechar e Voltar ao Menu</button>
+  </div>
+</div>
 
     <script src="script.js"></script>
 </body>
