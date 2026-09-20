@@ -250,3 +250,10 @@ body {
     font-size: 0.85rem;
     word-break: break-word;
 }
+.topo-sala{
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    grid-area: 2 / 1 / 3 / 2;
+}

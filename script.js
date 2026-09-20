@@ -19,7 +19,7 @@ let estagioEvolucao = localStorage.getItem('pkm_estagio') || "normal";
 let saldoInicial = modoJogo === "pobre" ? 20 : 100;
 let limitePokemon = modoJogo === "rapido" ? 3 : 6;
 
-let meuNumeroJogador = null; // Definido ao entrar na sala (1 ou 2)
+let meuNumeroJogador = null; // 1 ou 2
 let database = null;
 let salaRef = null;
 
@@ -43,7 +43,6 @@ document.addEventListener("DOMContentLoaded", () => {
   salaRef.once("value").then((snapshot) => {
     const dados = snapshot.val() || {};
 
-    // Identifica se você é o Jogador 1 ou 2 na sala
     if (!dados.jogador1) {
       meuNumeroJogador = 1;
       salaRef.update({
@@ -65,9 +64,8 @@ document.addEventListener("DOMContentLoaded", () => {
     } else if (dados.jogador2 === meuNome) {
       meuNumeroJogador = 2;
     } else {
-      alert("Esta sala já está cheia com 2 jogadores!");
-      window.location.href = 'index.html';
-      return;
+      meuNumeroJogador = 2;
+      salaRef.update({ jogador2: meuNome });
     }
 
     escutarAtualizacoesSala();
@@ -85,15 +83,26 @@ function escutarAtualizacoesSala() {
     const dados = snapshot.val();
     if (!dados) return;
 
-    // Atualiza nomes na tela
+    const nomeJ1 = dados.jogador1 || "Aguardando...";
+    const nomeJ2 = dados.jogador2 || "Aguardando...";
+
+    // Atualiza os nomes dos jogadores
     const elemJ1 = document.getElementById('titulo-j1');
     const elemJ2 = document.getElementById('titulo-j2');
-    if (elemJ1) elemJ1.innerText = dados.jogador1 || "Aguardando Jogador 1...";
-    if (elemJ2) elemJ2.innerText = dados.jogador2 || "Aguardando Jogador 2...";
+    if (elemJ1) elemJ1.innerText = nomeJ1;
+    if (elemJ2) elemJ2.innerText = nomeJ2;
+
+    // Atualiza textos dos botões de oferta
+    const btnJ1 = document.getElementById('btn-j1');
+    const btnJ2 = document.getElementById('btn-j2');
+    if (btnJ1) btnJ1.value = `Oferta ${nomeJ1}`;
+    if (btnJ2) btnJ2.value = `Oferta ${nomeJ2}`;
 
     // Atualiza saldos
-    if (document.getElementById('saldo-j1')) document.getElementById('saldo-j1').innerText = dados.saldoJ1 ?? saldoInicial;
-    if (document.getElementById('saldo-j2')) document.getElementById('saldo-j2').innerText = dados.saldoJ2 ?? saldoInicial;
+    const elemSaldo1 = document.getElementById('saldo-j1');
+    const elemSaldo2 = document.getElementById('saldo-j2');
+    if (elemSaldo1) elemSaldo1.innerText = dados.saldoJ1 ?? saldoInicial;
+    if (elemSaldo2) elemSaldo2.innerText = dados.saldoJ2 ?? saldoInicial;
 
     // Atualiza Pokémon do leilão
     if (dados.pokemonAtual) {
@@ -104,9 +113,9 @@ function escutarAtualizacoesSala() {
       exibirMensagem(dados.mensagem);
     }
 
-    // Atualiza os times exibidos
-    atualizarHTMLTime(1, dados.time1 || []);
-    atualizarHTMLTime(2, dados.time2 || []);
+    // Atualiza os times sem apagar os títulos <h2>
+    atualizarHTMLTime(1, dados.time1 || [], nomeJ1);
+    atualizarHTMLTime(2, dados.time2 || [], nomeJ2);
   });
 }
 
@@ -127,47 +136,20 @@ function atualizarTelaPokemon(pkm) {
   }
 }
 
-function atualizarHTMLTime(num, lista) {
+// Atualiza o time mantendo o <h2> com o ID original intacto
+function atualizarHTMLTime(num, lista, nomeJogador) {
   const timeElem = document.querySelector(`.time${num}`);
   if (!timeElem) return;
 
-  let html = "";
+  let htmlImagens = "";
   lista.forEach(pkm => {
-    html += `<img src="${pkm.imagem}" alt="${pkm.nome}" class="pkm-time" title="${pkm.nome} (R$${pkm.valor})">`;
+    htmlImagens += `<img src="${pkm.imagem}" alt="${pkm.nome}" class="pkm-time" title="${pkm.nome} (R$${pkm.valor})" style="width: 50px; height: 50px; margin: 2px;">`;
   });
-  timeElem.innerHTML = html;
+
+  timeElem.innerHTML = `<h2 id="titulo-j${num}">${nomeJogador}</h2>${htmlImagens}`;
 }
 
-// Busca evolução final na PokéAPI
-async function obterEvolucaoFinal(pokemonId) {
-  try {
-    const resEspecie = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${pokemonId}`);
-    const dadosEspecie = await resEspecie.json();
-
-    const resCadeia = await fetch(dadosEspecie.evolution_chain.url);
-    const dadosCadeia = await resCadeia.json();
-
-    let noAtual = dadosCadeia.chain;
-    while (noAtual.evolves_to && noAtual.evolves_to.length > 0) {
-      const idx = Math.floor(Math.random() * noAtual.evolves_to.length);
-      noAtual = noAtual.evolves_to[idx];
-    }
-
-    const resFinal = await fetch(`https://pokeapi.co/api/v2/pokemon/${noAtual.species.name}`);
-    const dadosFinal = await resFinal.json();
-
-    return {
-      id: dadosFinal.id,
-      nome: dadosFinal.name.toUpperCase(),
-      imagem: dadosFinal.sprites.other['official-artwork'].front_default
-    };
-  } catch (erro) {
-    console.error("Erro na evolução:", erro);
-    return null;
-  }
-}
-
-// 4. AÇÕES DO LEILÃO (SORTEAR, LANCE, DESISTIR, FINALIZAR)
+// 4. AÇÕES DO LEILÃO
 async function sortearPokemon() {
   if (!salaRef) return;
 
@@ -199,11 +181,6 @@ async function sortearPokemon() {
 
 function darLance(jogador) {
   if (!salaRef) return;
-
-  if (jogador !== meuNumeroJogador) {
-    exibirMensagem("Aguarde a vez de cada jogador ou use seus botões!");
-    return;
-  }
 
   salaRef.once("value").then((snapshot) => {
     const dados = snapshot.val();
@@ -255,12 +232,6 @@ async function finalizarVenda(jogadorVencedor, valorFinal) {
   salaRef.once("value").then(async (snapshot) => {
     const dados = snapshot.val();
     let pkmFinal = dados.pokemonAtual;
-
-    if (dados.estagio === "final") {
-      salaRef.update({ mensagem: `Processando evolução final de ${pkmFinal.nome}...` });
-      const evo = await obterEvolucaoFinal(pkmFinal.id);
-      if (evo) pkmFinal = evo;
-    }
 
     pkmFinal.valor = valorFinal;
 
