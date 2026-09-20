@@ -54,7 +54,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const agora = Date.now();
       const umDiaEmMs = 24 * 60 * 60 * 1000;
 
-      // Limpeza de salas velhas
+      // Limpeza de salas velhas (>24h)
       if (dados.ultimaAtualizacao && (agora - dados.ultimaAtualizacao > umDiaEmMs)) {
         salaRef.remove();
         window.location.reload();
@@ -256,10 +256,8 @@ async function ehEvolucaoFinal(pokemonId) {
   }
 }
 
-// 5. AÇÕES DO LEILÃO
-async function sortearPokemon() {
-  exibirMensagem("Sorteando novo Pokémon para o leilão...");
-
+// Função utilitária para obter um Pokémon válido conforme os filtros
+async function buscarProximoPokemonValido() {
   let pokemonValido = false;
   let tentativas = 0;
   let novoPokemon = null;
@@ -299,6 +297,14 @@ async function sortearPokemon() {
       console.warn("Tentativa de sorteio falhou, tentando outro...", erro);
     }
   }
+
+  return novoPokemon;
+}
+
+// 5. AÇÕES DO LEILÃO
+async function sortearPokemon() {
+  exibirMensagem("Sorteando novo Pokémon para o leilão...");
+  const novoPokemon = await buscarProximoPokemonValido();
 
   if (!novoPokemon) {
     exibirMensagem("Erro ao encontrar um Pokémon com o filtro selecionado. Tente novamente.");
@@ -468,7 +474,7 @@ function desistir() {
 async function finalizarVenda(jogadorVencedor, valorFinal) {
   if (!salaRef) return;
 
-  salaRef.once("value").then((snapshot) => {
+  salaRef.once("value").then(async (snapshot) => {
     const dados = snapshot.val();
     let pkmFinal = dados.pokemonAtual;
     pkmFinal.valor = valorFinal;
@@ -488,15 +494,35 @@ async function finalizarVenda(jogadorVencedor, valorFinal) {
 
     const nomeVencedor = jogadorVencedor === 1 ? dados.jogador1 : dados.jogador2;
 
+    // Se ambos já tiverem 6 Pokémon, encerra sem novos sorteios
+    if (time1.length >= 6 && time2.length >= 6) {
+      salaRef.update({
+        saldoJ1: novoSaldoJ1,
+        saldoJ2: novoSaldoJ2,
+        time1: time1,
+        time2: time2,
+        pokemonAtual: null,
+        lanceAtual: 0,
+        quemDeuMaiorLance: null,
+        mensagem: `🎉 VENDIDO! ${nomeVencedor} comprou ${pkmFinal.nome} por R$ ${valorFinal}! Ambos os times estão completos!`,
+        ultimaAtualizacao: Date.now()
+      });
+      return;
+    }
+
+    // SORTEIO AUTOMÁTICO DO PRÓXIMO POKÉMON PÓS-COMPRA
+    exibirMensagem(`🎉 VENDIDO para ${nomeVencedor}! Sorteando o próximo Pokémon...`);
+    const proximoPokemon = await buscarProximoPokemonValido();
+
     salaRef.update({
       saldoJ1: novoSaldoJ1,
       saldoJ2: novoSaldoJ2,
       time1: time1,
       time2: time2,
-      pokemonAtual: null,
+      pokemonAtual: proximoPokemon,
       lanceAtual: 0,
       quemDeuMaiorLance: null,
-      mensagem: `🎉 VENDIDO! ${nomeVencedor} comprou ${pkmFinal.nome} por R$ ${valorFinal}!`,
+      mensagem: `🎉 VENDIDO! ${nomeVencedor} comprou ${pkmFinal.nome} por R$ ${valorFinal}! Leilão aberto para ${proximoPokemon.nome}!`,
       ultimaAtualizacao: Date.now()
     });
   });
