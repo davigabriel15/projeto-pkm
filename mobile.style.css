@@ -21,7 +21,7 @@ body {
 /* Logo do Site */
 .logo {
     background-color: white;
-    border-radius: ;
+    border-radius: 10px;
     display: flex;
     justify-content: center;
     align-items: center;
