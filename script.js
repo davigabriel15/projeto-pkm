@@ -23,7 +23,7 @@ let meuNumeroJogador = null; // 1 ou 2 (Online)
 let database = null;
 let salaRef = null;
 
-// Controle de Leilão para MODO LOCAL
+// Controle do Leilão para MODO LOCAL (1 Tela)
 let leilaoAtual = {
   pokemon: null,
   lanceAtual: 0,
@@ -54,6 +54,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const agora = Date.now();
       const umDiaEmMs = 24 * 60 * 60 * 1000;
 
+      // Limpeza de salas velhas
       if (dados.ultimaAtualizacao && (agora - dados.ultimaAtualizacao > umDiaEmMs)) {
         salaRef.remove();
         window.location.reload();
@@ -147,7 +148,7 @@ function configurarModoLocal() {
   exibirMensagem(`Bem-vindos ${meuNome} e ${nomeJ2Local}! Sorteiem o primeiro Pokémon.`);
 }
 
-// 3. ESCUTAR MUDANÇAS NA SALA EM TEMPO REAL (ONLINE)
+// 3. ESCUTAR MUDANÇAS ONLINE (FIREBASE)
 function escutarAtualizacoesSala() {
   salaRef.on("value", (snapshot) => {
     const dados = snapshot.val();
@@ -225,10 +226,10 @@ function atualizarHTMLTime(num, lista, nomeJogador) {
     htmlImagens += `<img src="${pkm.imagem}" alt="${pkm.nome}" class="pkm-time" title="${pkm.nome} (R$${pkm.valor})" style="width: 50px; height: 50px; margin: 2px;">`;
   });
 
-  timeElem.innerHTML = `<h2 id="titulo-j${num}">${nomeJogador}</h2>${htmlImagens}`;
+  timeElem.innerHTML = `<h2 id="titulo-j${num}">${nomeJogador} (${lista.length}/6)</h2>${htmlImagens}`;
 }
 
-// 4. VERIFICAÇÃO DE ESTÁGIO DE EVOLUÇÃO
+// 4. VERIFICAÇÃO SE É EVOLUÇÃO FINAL
 async function ehEvolucaoFinal(pokemonId) {
   try {
     const resEspecie = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${pokemonId}/`);
@@ -250,7 +251,7 @@ async function ehEvolucaoFinal(pokemonId) {
 
     return ehUltimoNaLinha(dadosCadeia.chain, dadosEspecie.name);
   } catch (e) {
-    console.error("Erro ao verificar se é evolução final:", e);
+    console.error("Erro ao verificar evolução final:", e);
     return false;
   }
 }
@@ -274,11 +275,7 @@ async function sortearPokemon() {
       const resEspecie = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${idAleatorio}/`);
       const dadosEspecie = await resEspecie.json();
 
-      if (estagioEvolucao === "primeiro") {
-        if (!dadosEspecie.evolves_from_species) {
-          pokemonValido = true;
-        }
-      } else if (estagioEvolucao === "finais") {
+      if (estagioEvolucao === "finais") {
         const ehFinal = await ehEvolucaoFinal(idAleatorio);
         if (ehFinal) {
           pokemonValido = true;
@@ -299,7 +296,7 @@ async function sortearPokemon() {
         };
       }
     } catch (erro) {
-      console.warn("Tentativa de sorteio falhou, tentando outro ID...", erro);
+      console.warn("Tentativa de sorteio falhou, tentando outro...", erro);
     }
   }
 
@@ -346,6 +343,14 @@ function darLance(jogador) {
         return;
       }
 
+      const timeAtual = jogador === 1 ? (dados.time1 || []) : (dados.time2 || []);
+      
+      // REGRA: Máximo de 6 Pokémon por time
+      if (timeAtual.length >= 6) {
+        exibirMensagem("Seu time já está cheio! (Máximo de 6 Pokémon)");
+        return;
+      }
+
       const saldoAtual = jogador === 1 ? dados.saldoJ1 : dados.saldoJ2;
       const nomeJogador = jogador === 1 ? dados.jogador1 : dados.jogador2;
 
@@ -369,9 +374,17 @@ function darLance(jogador) {
       });
     });
   } else {
-    // MODO LOCAL
+    // MODO LOCAL (1 Tela)
     if (!leilaoAtual.pokemon) {
       exibirMensagem("Sorteie um Pokémon antes de dar um lance!");
+      return;
+    }
+
+    const timeAtual = jogador === 1 ? leilaoAtual.time1 : leilaoAtual.time2;
+
+    // REGRA: Máximo de 6 Pokémon por time
+    if (timeAtual.length >= 6) {
+      exibirMensagem("Seu time já está cheio! (Máximo de 6 Pokémon)");
       return;
     }
 
@@ -445,7 +458,6 @@ function desistir() {
     const nomeVencedor = jogadorVencedor === 1 ? meuNome : nomeJ2Local;
     exibirMensagem(`🎉 VENDIDO! ${nomeVencedor} comprou ${pkmComprado.nome} por R$ ${valorFinal}!`);
 
-    // Reseta o estado local do leilão
     leilaoAtual.pokemon = null;
     leilaoAtual.lanceAtual = 0;
     leilaoAtual.quemDeuMaiorLance = null;
@@ -459,7 +471,6 @@ async function finalizarVenda(jogadorVencedor, valorFinal) {
   salaRef.once("value").then((snapshot) => {
     const dados = snapshot.val();
     let pkmFinal = dados.pokemonAtual;
-
     pkmFinal.valor = valorFinal;
 
     let novoSaldoJ1 = dados.saldoJ1;
