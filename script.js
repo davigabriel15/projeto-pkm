@@ -1,15 +1,13 @@
-// Configuração do Firebase
-const firebaseConfig = {
-  apiKey: "AIzaSyAMyxe2W8c05Tr0dR63PNIqOHKBEXSVe4w",
-  authDomain: "pkm-multiplayer.firebaseapp.com",
-  databaseURL: "https://pkm-multiplayer-default-rtdb.firebaseio.com",
-  projectId: "pkm-multiplayer",
-  storageBucket: "pkm-multiplayer.firebasestorage.app",
-  messagingSenderId: "1088629364702",
-  appId: "1:1088629364702:web:9242cefd258cf72922ef4f",
-  measurementId: "G-39JTEX5N8J"
-};
-
+// O script.js vai ler o firebaseConfig que está definido no config.js
+try {
+  if (typeof firebase !== "undefined" && codigoSala && typeof firebaseConfig !== "undefined") {
+    firebase.initializeApp(firebaseConfig);
+    database = firebase.database();
+    salaRef = database.ref(`salas/${codigoSala}`);
+  }
+} catch (e) {
+  console.warn("Modo Local ativo ou erro no Firebase:", e);
+}
 // 1. CARREGAR DADOS DA SESSÃO LOCAL
 let meuNome = localStorage.getItem('pkm_meu_nome') || localStorage.getItem('pkm_jogador1') || "Jogador 1";
 let nomeJ2Local = localStorage.getItem('pkm_jogador2') || "Jogador 2";
