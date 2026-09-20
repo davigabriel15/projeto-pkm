@@ -135,24 +135,28 @@ body {
 
 /* Saldos */
 .dinheiro-rest-1 {
+    color: #28a745;
+    font-weight: bolder;
     background-color: white;
     border: 1px solid black;
     border-radius: 10px;
     margin: 3px;
     display: flex;
     justify-content: center;
-    align-items: flex-start;
+    align-items: center;
     grid-area: 5 / 1 / 6 / 2;
 }
 
 .dinheiro-rest-2 {
+    color: #28a745;
+    font-weight: bolder;
     background-color: white;
     border: 1px solid black;
     border-radius: 10px;
     margin: 3px;
     display: flex;
     justify-content: center;
-    align-items: flex-start;
+    align-items: center;
     grid-area: 5 / 3 / 6 / 4;
 }
 

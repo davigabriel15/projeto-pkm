@@ -44,7 +44,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (btnJ1) {
         btnJ1.value = "Oferta " + nomeJ1;
     } else {
-        // Fallback caso não tenha colocado o ID no HTML ainda
         const btnQuery1 = document.querySelector(".btn-enviar[onclick='darLance(1)']");
         if (btnQuery1) btnQuery1.value = "Oferta " + nomeJ1;
     }
@@ -52,7 +51,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (btnJ2) {
         btnJ2.value = "Oferta " + nomeJ2;
     } else {
-        // Fallback caso não tenha colocado o ID no HTML ainda
         const btnQuery2 = document.querySelector(".btn-enviar[onclick='darLance(2)']");
         if (btnQuery2) btnQuery2.value = "Oferta " + nomeJ2;
     }
@@ -87,11 +85,12 @@ async function obterEvolucaoFinal(pokemonId) {
         const resCadeia = await fetch(dadosEspecie.evolution_chain.url);
         const dadosCadeia = await resCadeia.json();
 
-        // 3. Navega até o último estágio disponível da linha evolutiva
+        // 3. Navega até o último estágio disponível
         let noAtual = dadosCadeia.chain;
         while (noAtual.evolves_to && noAtual.evolves_to.length > 0) {
-            // Caso existam várias evoluções (ex: Eevee), pega a primeira da lista
-            noAtual = noAtual.evolves_to[0];
+            // Sorteia aleatoriamente entre as evoluções possíveis (resolve o Eevee, Tyrogue, etc.)
+            const indiceAleatorio = Math.floor(Math.random() * noAtual.evolves_to.length);
+            noAtual = noAtual.evolves_to[indiceAleatorio];
         }
 
         // 4. Busca os dados do Pokémon final para pegar a artwork oficial
