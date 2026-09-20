@@ -8,65 +8,118 @@
 </head>
 <body>
 
-    <div class="menu-container">
-        <div class="logo">
-            <img src="imagens/pixil-frame-0.png" alt="Logo poke_draft">
-        </div>
-        
-        <form id="form-inicio" onsubmit="salvarEIniciar(event)" autocomplete="off">
-            
-            <div class="campo">
-                <label for="seu-nome">Seu Nome:</label>
-                <input type="text" id="seu-nome" placeholder="Digite seu nome" required>
-            </div>
+<div class="menu-container">
+    <h2>Poke Draft</h2>
 
-            <div class="campo">
-                <label for="codigo-sala">Código da Sala (para entrar):</label>
-                <input type="text" id="codigo-sala" placeholder="Deixe em branco para criar nova" style="text-transform: uppercase;">
-            </div>
-
-            <div class="campo">
-                <label for="modo-jogo">Modo de Jogo:</label>
-                <select id="modo-jogo">
-                    <option value="padrao">Padrão (R$ 100)</option>
-                    <option value="pobre">Modo Pobre (R$ 20)</option>
-                    <option value="rapido">Modo Rápido (3 Pokémon - R$ 100)</option>
-                </select>
-            </div>
-
-            <div class="campo">
-                <label for="estagio-pkm">Estágio do Pokémon:</label>
-                <select id="estagio-pkm">
-                    <option value="normal">Estágio Sorteado (Normal)</option>
-                    <option value="final">Evolução Final (Ex: Charmander → Charizard)</option>
-                </select>
-            </div>
-
-            <button type="submit" class="btn-iniciar">Entrar / Criar Sala</button>
-        </form>
+    <!-- Seleção do Tipo de Conexão -->
+    <div class="campo">
+        <label for="tipo-jogo">Modo de Jogo:</label>
+        <select id="tipo-jogo" onchange="alternarModoJogo()">
+            <option value="local">1 Tela (2 Jogadores na mesma tela)</option>
+            <option value="online">Online / Multiplayer (Salas)</option>
+        </select>
     </div>
 
-    <script>
-        function salvarEIniciar(event) {
-            event.preventDefault();
+    <!-- Regras do Leilão (Comum a ambos os modos) -->
+    <div class="campo">
+        <label for="modo-jogo">Orçamento Inicial:</label>
+        <select id="modo-jogo">
+            <option value="padrao">Padrão (R$ 100)</option>
+            <option value="pobre">Modo Pobre (R$ 20)</option>
+        </select>
+    </div>
 
-            const nome = document.getElementById('seu-nome').value || "Jogador";
-            let sala = document.getElementById('codigo-sala').value.trim().toUpperCase();
-            const modo = document.getElementById('modo-jogo').value;
-            const estagio = document.getElementById('estagio-pkm').value;
+    <div class="campo">
+        <label for="estagio-pkm">Estágio dos Pokémon:</label>
+        <select id="estagio-pkm">
+            <option value="normal">Todos os Estágios</option>
+            <option value="primeiro">Apenas Básicos / 1º Estágio</option>
+            <option value="lendarios">Apenas Lendários</option>
+        </select>
+    </div>
 
-            // Se não digitou código de sala, gera um código aleatório de 4 letras
-            if (!sala) {
-                sala = Math.random().toString(36).substring(2, 6).toUpperCase();
+    <!-- Campos para Modo Local (1 Tela) -->
+    <div id="container-local">
+        <div class="campo">
+            <label for="nome-j1-local">Nome do Jogador 1:</label>
+            <input type="text" id="nome-j1-local" placeholder="Ex: Davi" value="Jogador 1">
+        </div>
+        <div class="campo">
+            <label for="nome-j2-local">Nome do Jogador 2:</label>
+            <input type="text" id="nome-j2-local" placeholder="Ex: Lucas" value="Jogador 2">
+        </div>
+    </div>
+
+    <!-- Campos para Modo Online -->
+    <div id="container-online" style="display: none;">
+        <div class="campo">
+            <label for="nome-online">Seu Nome:</label>
+            <input type="text" id="nome-online" placeholder="Seu nome" value="Jogador">
+        </div>
+        <div class="campo">
+            <label for="codigo-sala-input">Código da Sala (Deixe em branco para criar uma):</label>
+            <input type="text" id="codigo-sala-input" placeholder="Ex: SALA1">
+        </div>
+    </div>
+
+    <button onclick="iniciarPartida()" class="btn-iniciar">Iniciar Jogo</button>
+</div>
+
+<script>
+    function alternarModoJogo() {
+        const modo = document.getElementById('tipo-jogo').value;
+        const containerLocal = document.getElementById('container-local');
+        const containerOnline = document.getElementById('container-online');
+
+        if (modo === 'local') {
+            containerLocal.style.display = 'block';
+            containerOnline.style.display = 'none';
+        } else {
+            containerLocal.style.display = 'none';
+            containerOnline.style.display = 'block';
+        }
+    }
+
+    function iniciarPartida() {
+        const tipoJogo = document.getElementById('tipo-jogo').value;
+        const modo = document.getElementById('modo-jogo').value;
+        const estagio = document.getElementById('estagio-pkm').value;
+
+        // Salva as regras padrão do jogo
+        localStorage.setItem('pkm_modo', modo);
+        localStorage.setItem('pkm_estagio', estagio);
+
+        if (tipoJogo === 'local') {
+            const j1 = document.getElementById('nome-j1-local').value.trim() || "Jogador 1";
+            const j2 = document.getElementById('nome-j2-local').value.trim() || "Jogador 2";
+
+            // Salva as configurações de 1 Tela
+            localStorage.setItem('pkm_meu_nome', j1);
+            localStorage.setItem('pkm_jogador1', j1);
+            localStorage.setItem('pkm_jogador2', j2);
+            
+            // Remove o ID de sala para garantir que o script entre no Modo Local
+            localStorage.removeItem('pkm_sala_id');
+
+        } else {
+            const meuNome = document.getElementById('nome-online').value.trim() || "Jogador";
+            let codigoSala = document.getElementById('codigo-sala-input').value.trim().toUpperCase();
+
+            // Se não informou a sala, gera um código aleatório de 4 letras
+            if (!codigoSala) {
+                codigoSala = Math.random().toString(36).substring(2, 6).toUpperCase();
             }
 
-            localStorage.setItem('pkm_meu_nome', nome);
-            localStorage.setItem('pkm_sala_id', sala);
-            localStorage.setItem('pkm_modo', modo);
-            localStorage.setItem('pkm_estagio', estagio);
-
-            window.location.href = 'jogo.html';
+            // Salva as configurações do Modo Online
+            localStorage.setItem('pkm_meu_nome', meuNome);
+            localStorage.setItem('pkm_jogador1', meuNome);
+            localStorage.setItem('pkm_sala_id', codigoSala);
         }
-    </script>
+
+        // Redireciona para a tela do jogo
+        window.location.href = "jogo.html"; 
+    }
+</script>
+
 </body>
 </html>

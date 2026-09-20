@@ -11,73 +11,139 @@ const firebaseConfig = {
 };
 
 // 1. CARREGAR DADOS DA SESSÃO LOCAL
-let meuNome = localStorage.getItem('pkm_meu_nome') || "Jogador";
-let codigoSala = localStorage.getItem('pkm_sala_id') || "SALA1";
+let meuNome = localStorage.getItem('pkm_meu_nome') || localStorage.getItem('pkm_jogador1') || "Jogador 1";
+let nomeJ2Local = localStorage.getItem('pkm_jogador2') || "Jogador 2";
+let codigoSala = localStorage.getItem('pkm_sala_id') || "";
 let modoJogo = localStorage.getItem('pkm_modo') || "padrao";
 let estagioEvolucao = localStorage.getItem('pkm_estagio') || "normal";
 
 let saldoInicial = modoJogo === "pobre" ? 20 : 100;
-let limitePokemon = modoJogo === "rapido" ? 3 : 6;
+let meuNumeroJogador = null; // 1 ou 2 (Online)
 
-let meuNumeroJogador = null; // 1 ou 2
 let database = null;
 let salaRef = null;
 
-// Conecta ao Firebase
+// Tenta conectar ao Firebase se houver código de sala
 try {
-  if (typeof firebase !== "undefined") {
+  if (typeof firebase !== "undefined" && codigoSala) {
     firebase.initializeApp(firebaseConfig);
     database = firebase.database();
     salaRef = database.ref(`salas/${codigoSala}`);
   }
 } catch (e) {
-  console.warn("Erro ao conectar no Firebase:", e);
+  console.warn("Modo Local ativo ou erro no Firebase:", e);
 }
 
-// 2. CONECTAR NA SALA E REGISTRAR JOGADOR
+// 2. CONECTAR E CONFIGURAR INTERFACE
 document.addEventListener("DOMContentLoaded", () => {
   exibirCodigoSala();
 
-  if (!salaRef) return;
+  if (salaRef) {
+    // MODO ONLINE
+    salaRef.once("value").then((snapshot) => {
+      const dados = snapshot.val() || {};
+      const agora = Date.now();
+      const umDiaEmMs = 24 * 60 * 60 * 1000;
 
-  salaRef.once("value").then((snapshot) => {
-    const dados = snapshot.val() || {};
+      // LIMPEZA AUTOMÁTICA: Se a sala tiver mais de 24 horas sem atualização, apaga do Firebase
+      if (dados.ultimaAtualizacao && (agora - dados.ultimaAtualizacao > umDiaEmMs)) {
+        salaRef.remove();
+        window.location.reload();
+        return;
+      }
 
-    if (!dados.jogador1) {
-      meuNumeroJogador = 1;
-      salaRef.update({
-        jogador1: meuNome,
-        saldoJ1: saldoInicial,
-        time1: [],
-        modo: modoJogo,
-        estagio: estagioEvolucao
-      });
-    } else if (dados.jogador1 === meuNome) {
-      meuNumeroJogador = 1;
-    } else if (!dados.jogador2) {
-      meuNumeroJogador = 2;
-      salaRef.update({
-        jogador2: meuNome,
-        saldoJ2: saldoInicial,
-        time2: []
-      });
-    } else if (dados.jogador2 === meuNome) {
-      meuNumeroJogador = 2;
-    } else {
-      meuNumeroJogador = 2;
-      salaRef.update({ jogador2: meuNome });
-    }
+      if (!dados.jogador1) {
+        meuNumeroJogador = 1;
+        salaRef.update({
+          jogador1: meuNome,
+          saldoJ1: saldoInicial,
+          time1: [],
+          modo: modoJogo,
+          estagio: estagioEvolucao,
+          ultimaAtualizacao: agora
+        });
+      } else if (dados.jogador1 === meuNome) {
+        meuNumeroJogador = 1;
+        salaRef.update({ ultimaAtualizacao: agora });
+      } else if (!dados.jogador2) {
+        meuNumeroJogador = 2;
+        salaRef.update({
+          jogador2: meuNome,
+          saldoJ2: saldoInicial,
+          time2: [],
+          ultimaAtualizacao: agora
+        });
+      } else if (dados.jogador2 === meuNome) {
+        meuNumeroJogador = 2;
+        salaRef.update({ ultimaAtualizacao: agora });
+      } else {
+        meuNumeroJogador = 2;
+        salaRef.update({ 
+          jogador2: meuNome,
+          ultimaAtualizacao: agora 
+        });
+      }
 
-    escutarAtualizacoesSala();
-  });
+      configurarBotoesPorModo(true);
+      escutarAtualizacoesSala();
+    });
+  } else {
+    // MODO LOCAL (1 Tela)
+    configurarBotoesPorModo(false);
+    configurarModoLocal();
+  }
 });
 
 function exibirCodigoSala() {
   const elemSala = document.getElementById('codigo-sala-display');
-  if (elemSala) elemSala.innerText = `SALA: ${codigoSala}`;
+  if (elemSala) {
+    elemSala.innerText = codigoSala ? `SALA: ${codigoSala}` : "MODO LOCAL (1 TELA)";
+  }
 }
 
-// 3. ESCUTAR MUDANÇAS NA SALA EM TEMPO REAL
+// Ajusta os botões conforme o modo (Online x Local)
+function configurarBotoesPorModo(isOnline) {
+  const btnJ1 = document.getElementById('btn-j1');
+  const btnJ2 = document.getElementById('btn-j2');
+
+  if (!btnJ1 || !btnJ2) return;
+
+  if (isOnline) {
+    // No modo online, esconde o botão do adversário e deixa só o seu
+    if (meuNumeroJogador === 1) {
+      btnJ1.style.display = "inline-block";
+      btnJ2.style.display = "none";
+      btnJ1.value = `Oferta de ${meuNome}`;
+    } else if (meuNumeroJogador === 2) {
+      btnJ1.style.display = "none";
+      btnJ2.style.display = "inline-block";
+      btnJ2.value = `Oferta de ${meuNome}`;
+    }
+  } else {
+    // No modo local (1 tela), mostra os dois botões com os nomes
+    btnJ1.style.display = "inline-block";
+    btnJ2.style.display = "inline-block";
+    btnJ1.value = `Oferta de ${meuNome}`;
+    btnJ2.value = `Oferta de ${nomeJ2Local}`;
+  }
+}
+
+// Configuração para o modo local de 1 tela
+function configurarModoLocal() {
+  const elemJ1 = document.getElementById('titulo-j1');
+  const elemJ2 = document.getElementById('titulo-j2');
+  if (elemJ1) elemJ1.innerText = meuNome;
+  if (elemJ2) elemJ2.innerText = nomeJ2Local;
+
+  const elemSaldo1 = document.getElementById('saldo-j1');
+  const elemSaldo2 = document.getElementById('saldo-j2');
+  if (elemSaldo1) elemSaldo1.innerText = saldoInicial;
+  if (elemSaldo2) elemSaldo2.innerText = saldoInicial;
+
+  exibirMensagem(`Bem-vindos ${meuNome} e ${nomeJ2Local}! Sorteiem o primeiro Pokémon.`);
+}
+
+// 3. ESCUTAR MUDANÇAS NA SALA EM TEMPO REAL (ONLINE)
 function escutarAtualizacoesSala() {
   salaRef.on("value", (snapshot) => {
     const dados = snapshot.val();
@@ -86,17 +152,14 @@ function escutarAtualizacoesSala() {
     const nomeJ1 = dados.jogador1 || "Aguardando...";
     const nomeJ2 = dados.jogador2 || "Aguardando...";
 
-    // Atualiza os nomes dos jogadores
+    // Atualiza nomes na tela
     const elemJ1 = document.getElementById('titulo-j1');
     const elemJ2 = document.getElementById('titulo-j2');
     if (elemJ1) elemJ1.innerText = nomeJ1;
     if (elemJ2) elemJ2.innerText = nomeJ2;
 
-    // Atualiza textos dos botões de oferta
-    const btnJ1 = document.getElementById('btn-j1');
-    const btnJ2 = document.getElementById('btn-j2');
-    if (btnJ1) btnJ1.value = `Oferta ${nomeJ1}`;
-    if (btnJ2) btnJ2.value = `Oferta ${nomeJ2}`;
+    // Atualiza o texto do seu botão
+    configurarBotoesPorModo(true);
 
     // Atualiza saldos
     const elemSaldo1 = document.getElementById('saldo-j1');
@@ -113,7 +176,7 @@ function escutarAtualizacoesSala() {
       exibirMensagem(dados.mensagem);
     }
 
-    // Atualiza os times sem apagar os títulos <h2>
+    // Atualiza times
     atualizarHTMLTime(1, dados.time1 || [], nomeJ1);
     atualizarHTMLTime(2, dados.time2 || [], nomeJ2);
   });
@@ -136,7 +199,6 @@ function atualizarTelaPokemon(pkm) {
   }
 }
 
-// Atualiza o time mantendo o <h2> com o ID original intacto
 function atualizarHTMLTime(num, lista, nomeJogador) {
   const timeElem = document.querySelector(`.time${num}`);
   if (!timeElem) return;
@@ -151,8 +213,6 @@ function atualizarHTMLTime(num, lista, nomeJogador) {
 
 // 4. AÇÕES DO LEILÃO
 async function sortearPokemon() {
-  if (!salaRef) return;
-
   exibirMensagem("Sorteando novo Pokémon para o leilão...");
   const idAleatorio = Math.floor(Math.random() * 1025) + 1;
 
@@ -166,12 +226,18 @@ async function sortearPokemon() {
       imagem: dados.sprites.other['official-artwork'].front_default
     };
 
-    salaRef.update({
-      pokemonAtual: novoPokemon,
-      lanceAtual: 0,
-      quemDeuMaiorLance: null,
-      mensagem: `Leilão iniciado para ${novoPokemon.nome}! Faça sua oferta.`
-    });
+    if (salaRef) {
+      salaRef.update({
+        pokemonAtual: novoPokemon,
+        lanceAtual: 0,
+        quemDeuMaiorLance: null,
+        mensagem: `Leilão iniciado para ${novoPokemon.nome}! Faça sua oferta.`,
+        ultimaAtualizacao: Date.now()
+      });
+    } else {
+      atualizarTelaPokemon(novoPokemon);
+      exibirMensagem(`Leilão iniciado para ${novoPokemon.nome}! Faça sua oferta.`);
+    }
 
   } catch (erro) {
     console.error("Erro ao sortear:", erro);
@@ -180,39 +246,46 @@ async function sortearPokemon() {
 }
 
 function darLance(jogador) {
-  if (!salaRef) return;
-
-  salaRef.once("value").then((snapshot) => {
-    const dados = snapshot.val();
-    if (!dados || !dados.pokemonAtual) return;
-
-    const inputValor = document.getElementById('valor-lance');
-    if (!inputValor) return;
-
-    const valorDigitado = parseInt(inputValor.value);
-    const saldoAtual = jogador === 1 ? dados.saldoJ1 : dados.saldoJ2;
-    const nomeJogador = jogador === 1 ? dados.jogador1 : dados.jogador2;
-
-    if (isNaN(valorDigitado) || valorDigitado <= 0) return;
-
-    if (valorDigitado <= (dados.lanceAtual || 0)) {
-      exibirMensagem(`O lance precisa ser maior que R$ ${dados.lanceAtual || 0}!`);
+  if (salaRef) {
+    // MODO ONLINE
+    if (jogador !== meuNumeroJogador) {
+      exibirMensagem("Você só pode dar lances no seu próprio botão!");
       return;
     }
 
-    if (valorDigitado > saldoAtual) {
-      exibirMensagem(`${nomeJogador} não tem saldo suficiente!`);
-      return;
-    }
+    salaRef.once("value").then((snapshot) => {
+      const dados = snapshot.val();
+      if (!dados || !dados.pokemonAtual) return;
 
-    inputValor.value = '';
+      const inputValor = document.getElementById('valor-lance');
+      if (!inputValor) return;
 
-    salaRef.update({
-      lanceAtual: valorDigitado,
-      quemDeuMaiorLance: jogador,
-      mensagem: `${nomeJogador} assumiu o leilão com R$ ${valorDigitado}!`
+      const valorDigitado = parseInt(inputValor.value);
+      const saldoAtual = jogador === 1 ? dados.saldoJ1 : dados.saldoJ2;
+      const nomeJogador = jogador === 1 ? dados.jogador1 : dados.jogador2;
+
+      if (isNaN(valorDigitado) || valorDigitado <= 0) return;
+
+      if (valorDigitado <= (dados.lanceAtual || 0)) {
+        exibirMensagem(`O lance precisa ser maior que R$ ${dados.lanceAtual || 0}!`);
+        return;
+      }
+
+      if (valorDigitado > saldoAtual) {
+        exibirMensagem(`${nomeJogador} não tem saldo suficiente!`);
+        return;
+      }
+
+      inputValor.value = '';
+
+      salaRef.update({
+        lanceAtual: valorDigitado,
+        quemDeuMaiorLance: jogador,
+        mensagem: `${nomeJogador} assumiu o leilão com R$ ${valorDigitado}!`,
+        ultimaAtualizacao: Date.now()
+      });
     });
-  });
+  }
 }
 
 function desistir() {
@@ -229,6 +302,8 @@ function desistir() {
 }
 
 async function finalizarVenda(jogadorVencedor, valorFinal) {
+  if (!salaRef) return;
+
   salaRef.once("value").then(async (snapshot) => {
     const dados = snapshot.val();
     let pkmFinal = dados.pokemonAtual;
@@ -258,7 +333,8 @@ async function finalizarVenda(jogadorVencedor, valorFinal) {
       pokemonAtual: null,
       lanceAtual: 0,
       quemDeuMaiorLance: null,
-      mensagem: `🎉 VENDIDO! ${nomeVencedor} comprou ${pkmFinal.nome} por R$ ${valorFinal}!`
+      mensagem: `🎉 VENDIDO! ${nomeVencedor} comprou ${pkmFinal.nome} por R$ ${valorFinal}!`,
+      ultimaAtualizacao: Date.now()
     });
   });
 }
