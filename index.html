@@ -12,16 +12,17 @@
         <div class="logo">
             <img src="imagens/pixil-frame-0.png" alt="Logo poke_draft">
         </div>
+        
         <form id="form-inicio" onsubmit="salvarEIniciar(event)">
             
             <div class="campo">
-                <label for="jogador1">Nome Jogador 1:</label>
-                <input type="text" id="jogador1" placeholder="Jogador 1" required>
+                <label for="seu-nome">Seu Nome:</label>
+                <input type="text" id="seu-nome" placeholder="Digite seu nome" required>
             </div>
 
             <div class="campo">
-                <label for="jogador2">Nome Jogador 2:</label>
-                <input type="text" id="jogador2" placeholder="Jogador 2" required>
+                <label for="codigo-sala">Código da Sala (para entrar):</label>
+                <input type="text" id="codigo-sala" placeholder="Deixe em branco para criar nova" style="text-transform: uppercase;">
             </div>
 
             <div class="campo">
@@ -41,7 +42,7 @@
                 </select>
             </div>
 
-            <button type="submit" class="btn-iniciar">Iniciar Leilão</button>
+            <button type="submit" class="btn-iniciar">Entrar / Criar Sala</button>
         </form>
     </div>
 
@@ -49,13 +50,18 @@
         function salvarEIniciar(event) {
             event.preventDefault();
 
-            const j1 = document.getElementById('jogador1').value || "Jogador 1";
-            const j2 = document.getElementById('jogador2').value || "Jogador 2";
+            const nome = document.getElementById('seu-nome').value || "Jogador";
+            let sala = document.getElementById('codigo-sala').value.trim().toUpperCase();
             const modo = document.getElementById('modo-jogo').value;
             const estagio = document.getElementById('estagio-pkm').value;
 
-            localStorage.setItem('pkm_jogador1', j1);
-            localStorage.setItem('pkm_jogador2', j2);
+            // Se não digitou código de sala, gera um código aleatório de 4 letras
+            if (!sala) {
+                sala = Math.random().toString(36).substring(2, 6).toUpperCase();
+            }
+
+            localStorage.setItem('pkm_meu_nome', nome);
+            localStorage.setItem('pkm_sala_id', sala);
             localStorage.setItem('pkm_modo', modo);
             localStorage.setItem('pkm_estagio', estagio);
 
