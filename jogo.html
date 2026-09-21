@@ -11,23 +11,24 @@
     <link rel="stylesheet" href="mobile.style.css">
 </head>
 <body>
-    <div class="logo"><img src="imagens/pixil-frame-0.png" alt="Logo poke_draft">    <div class="topo-sala">
-        <h2 id="codigo-sala-display">SALA: Carregando...</h2>
-    </div></div>
+    <div class="logo">
+        <img src="imagens/Logo_do_site_pkm.png" alt="Logo poke_draft">
+        <div class="topo-sala">
+            <h2 id="codigo-sala-display">SALA: Carregando...</h2>
+        </div>
+    </div>
     
-    <!-- Adicionado id="titulo-j1" para o JS trocar o nome do jogador sem alterar a classe -->
     <div class="time1">
         <h2 id="titulo-j1">Time 1</h2>
     </div>
     
-    <!-- pokemon sorteado -->
+    <!-- Pokémon sorteado -->
     <div class="pkm">
         <img id="pokemon-img" src="" alt="Aguardando sorteio..." style="display: none;">
         <h3 id="pokemon-nome">Clique em Sortear!</h3>
         <button id="btn-sortear" onclick="sortearPokemon()">Sortear Pokémon</button>
     </div>
     
-    <!-- Adicionado id="titulo-j2" para o JS trocar o nome do jogador sem alterar a classe -->
     <div class="time2">
         <h2 id="titulo-j2">Time 2</h2>
     </div>
@@ -40,48 +41,52 @@
         <p>R$ <span id="saldo-j2">100</span></p>
     </div>
 
-    <!-- lances -->
+    <!-- Lances -->
     <div class="lance">
         <h2>Seu lance</h2>
         <input type="number" id="valor-lance" placeholder="R$">
         <div class="desisão">
-    <input type="button" id="btn-j1" value="Oferta J1" class="btn-enviar" onclick="darLance(1)">
-    <input type="button" id="btn-j2" value="Oferta J2" class="btn-enviar" onclick="darLance(2)">
-    <input type="button" value="Desistir" class="btn-desistir" onclick="desistir()">
-</div>
+            <input type="button" id="btn-j1" value="Oferta J1" class="btn-enviar" onclick="darLance(1)">
+            <input type="button" id="btn-j2" value="Oferta J2" class="btn-enviar" onclick="darLance(2)">
+            <input type="button" value="Desistir" class="btn-desistir" onclick="desistir()">
+        </div>
     </div>
     
     <div class="situacao"></div>
+
     <!-- Modal de Batalha Automática -->
-<div id="modal-batalha" class="modal-batalha" style="display: none;">
-  <div class="conteudo-batalha">
-    <h2>SIMULADOR DE BATALHA</h2>
-    
-    <div class="arena">
-      <div class="combatente p1">
-        <h3 id="batalha-nome-j1">Jogador 1</h3>
-        <img id="batalha-img-pkm1" src="" alt="Pokemon J1">
-        <p id="batalha-nome-pkm1">-</p>
-        <div class="barra-hp"><div id="hp-bar-1" class="hp-fill"></div></div>
-      </div>
+    <div id="modal-batalha" class="modal-batalha" style="display: none;">
+      <div class="conteudo-batalha">
+        <h2>SIMULADOR DE BATALHA</h2>
+        
+        <div class="arena">
+          <div class="combatente p1">
+            <h3 id="batalha-nome-j1">Jogador 1</h3>
+            <img id="batalha-img-pkm1" src="" alt="Pokemon J1">
+            <p id="batalha-nome-pkm1">-</p>
+            <div class="barra-hp"><div id="hp-bar-1" class="hp-fill"></div></div>
+            <p style="font-size: 11px; margin-top: 3px; color: #ccc;" id="batalha-texto-hp-1">- / -</p>
+          </div>
 
-      <div class="vs">VS</div>
+          <div class="vs">VS</div>
 
-      <div class="combatente p2">
-        <h3 id="batalha-nome-j2">Jogador 2</h3>
-        <img id="batalha-img-pkm2" src="" alt="Pokemon J2">
-        <p id="batalha-nome-pkm2">-</p>
-        <div class="barra-hp"><div id="hp-bar-2" class="hp-fill"></div></div>
+          <div class="combatente p2">
+            <h3 id="batalha-nome-j2">Jogador 2</h3>
+            <img id="batalha-img-pkm2" src="" alt="Pokemon J2">
+            <p id="batalha-nome-pkm2">-</p>
+            <div class="barra-hp"><div id="hp-bar-2" class="hp-fill"></div></div>
+            <p style="font-size: 11px; margin-top: 3px; color: #ccc;" id="batalha-texto-hp-2">- / -</p>
+          </div>
+        </div>
+
+        <div id="log-batalha" class="log-batalha">
+          <p>Aguardando início da batalha...</p>
+        </div>
+
+        <button id="btn-fechar-batalha" onclick="fecharModalBatalha()" style="display: none; background: #ffcb05; color: #3c5aa6; border: none; padding: 8px 15px; font-weight: bold; border-radius: 5px; cursor: pointer;">Fechar e Voltar ao Menu</button>
       </div>
     </div>
 
-    <div id="log-batalha" class="log-batalha">
-      <p>Aguardando início da batalha...</p>
-    </div>
-
-    <button id="btn-fechar-batalha" onclick="fecharModalBatalha()" style="display: none;">Fechar e Voltar ao Menu</button>
-  </div>
-</div>
     <script src="config.js"></script>
     <script src="batalha.js"></script>
     <script src="script.js"></script>

@@ -625,6 +625,7 @@ function moverPokemon(index, direcao) {
   renderizarListaOrganizacao();
 }
 
+// Substitua a função confirmarOrdemTime inteira no seu script.js por esta:
 function confirmarOrdemTime() {
   const modal = document.getElementById('modal-organizar');
   if (modal) modal.style.display = 'none';
@@ -634,6 +635,20 @@ function confirmarOrdemTime() {
     salaRef.update(campoAtualizar);
     exibirMensagem("Ordem salva! Aguardando o oponente organizar o time...");
   } else {
-    iniciarBatalhaAutomatica(meuTimeOrganizado, leilaoAtual.time2, meuNome, nomeJ2Local);
+    // MODO LOCAL (1 TELA)
+    // Se o Jogador 1 acabou de organizar, guardamos o time dele e abrimos para o Jogador 2
+    if (!window.time1OrganizadoLocal) {
+      window.time1OrganizadoLocal = [...meuTimeOrganizado];
+      exibirMensagem(`Agora é a vez de ${nomeJ2Local} organizar o time!`);
+      setTimeout(() => {
+        abrirModalOrganizacao(leilaoAtual.time2, nomeJ2Local);
+      }, 500);
+    } else {
+      // Se o Jogador 2 acabou de organizar, temos os dois times prontos!
+      const time1Pronto = window.time1OrganizadoLocal;
+      const time2Pronto = [...meuTimeOrganizado];
+      window.time1OrganizadoLocal = null; // limpa para futuros jogos
+      iniciarBatalhaAutomatica(time1Pronto, time2Pronto, meuNome, nomeJ2Local);
+    }
   }
 }
