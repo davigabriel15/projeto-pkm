@@ -1,4 +1,6 @@
-// 1. PRIMEIRO: Declarar todas as variáveis globais e do localStorage
+// ==========================================
+// 1. VARIÁVEIS GLOBAIS E CONFIGURAÇÃO INICIAL
+// ==========================================
 let meuNome = localStorage.getItem('pkm_meu_nome') || localStorage.getItem('pkm_jogador1') || "Jogador 1";
 let nomeJ2Local = localStorage.getItem('pkm_jogador2') || "Jogador 2";
 let codigoSala = localStorage.getItem('pkm_sala_id') || "";
@@ -20,7 +22,9 @@ let leilaoAtual = {
   time2: []
 };
 
-// 2. SEGUNDO: Conectar ao Firebase usando a variável codigoSala já inicializada
+// ==========================================
+// 2. CONEXÃO COM O FIREBASE
+// ==========================================
 try {
   if (typeof firebase !== "undefined" && codigoSala && typeof firebaseConfig !== "undefined") {
     firebase.initializeApp(firebaseConfig);
@@ -31,7 +35,9 @@ try {
   console.warn("Modo Local ativo ou erro no Firebase:", e);
 }
 
-// 3. TERCEIRO: CONECTAR E CONFIGURAR INTERFACE
+// ==========================================
+// 3. CONECTAR E CONFIGURAR INTERFACE
+// ==========================================
 document.addEventListener("DOMContentLoaded", () => {
   exibirCodigoSala();
 
@@ -54,6 +60,7 @@ document.addEventListener("DOMContentLoaded", () => {
           jogador1: meuNome,
           saldoJ1: saldoInicial,
           time1: [],
+          time1Organizado: null,
           modo: modoJogo,
           estagio: estagioEvolucao,
           ultimaAtualizacao: agora
@@ -67,6 +74,7 @@ document.addEventListener("DOMContentLoaded", () => {
           jogador2: meuNome,
           saldoJ2: saldoInicial,
           time2: [],
+          time2Organizado: null,
           ultimaAtualizacao: agora
         });
       } else if (dados.jogador2 === meuNome) {
@@ -135,7 +143,9 @@ function configurarModoLocal() {
   exibirMensagem(`Bem-vindos ${meuNome} e ${nomeJ2Local}! Sorteiem o primeiro Pokémon.`);
 }
 
+// ==========================================
 // 4. ESCUTAR MUDANÇAS ONLINE (FIREBASE)
+// ==========================================
 function escutarAtualizacoesSala() {
   salaRef.on("value", (snapshot) => {
     const dados = snapshot.val();
@@ -173,10 +183,35 @@ function escutarAtualizacoesSala() {
     atualizarHTMLTime(1, dados.time1 || [], nomeJ1);
     atualizarHTMLTime(2, dados.time2 || [], nomeJ2);
 
+    // FLUXO DE ORGANIZAÇÃO E DISPARO DE BATALHA QUANDO OS TIMES CHEGAM A 6
     if (dados.time1 && dados.time1.length >= 6 && dados.time2 && dados.time2.length >= 6) {
-      const modal = document.getElementById('modal-batalha');
-      if (modal && modal.style.display !== 'flex') {
-        iniciarBatalhaAutomatica(dados.time1, dados.time2, nomeJ1, nomeJ2);
+      const time1Pronto = dados.time1Organizado || dados.time1;
+      const time2Pronto = dados.time2Organizado || dados.time2;
+
+      // Se ambos já organizaram, fecha o modal e inicia a batalha
+      if (dados.time1Organizado && dados.time2Organizado) {
+        const modalOrg = document.getElementById('modal-organizar');
+        if (modalOrg) modalOrg.style.display = 'none';
+
+        const modalBatalha = document.getElementById('modal-batalha');
+        if (modalBatalha && modalBatalha.style.display !== 'flex') {
+          iniciarBatalhaAutomatica(time1Pronto, time2Pronto, nomeJ1, nomeJ2);
+        }
+      } else {
+        // Verifica se o jogador atual já enviou sua ordem
+        const jaEnvieiOrdem = meuNumeroJogador === 1 ? dados.time1Organizado : dados.time2Organizado;
+        const meuTimeOriginal = meuNumeroJogador === 1 ? dados.time1 : dados.time2;
+
+        if (!jaEnvieiOrdem && meuTimeOriginal && meuTimeOriginal.length > 0) {
+          const modalOrg = document.getElementById('modal-organizar');
+          if (!modalOrg || modalOrg.style.display !== 'flex') {
+            abrirModalOrganizacao(meuTimeOriginal, meuNumeroJogador === 1 ? nomeJ1 : nomeJ2);
+          }
+        } else {
+          const modalOrg = document.getElementById('modal-organizar');
+          if (modalOrg) modalOrg.style.display = 'none';
+          exibirMensagem("Ordem salva! Aguardando o oponente organizar o time...");
+        }
       }
     }
   });
@@ -223,7 +258,9 @@ function atualizarHTMLTime(num, lista, nomeJogador) {
   timeElem.innerHTML = `<h2 id="titulo-j${num}">${nomeJogador} (${lista.length}/6)</h2>${htmlImagens}`;
 }
 
+// ==========================================
 // 5. VERIFICAÇÃO DE EVOLUÇÃO FINAL E SORTEIO
+// ==========================================
 async function ehEvolucaoFinal(pokemonId) {
   try {
     const resEspecie = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${pokemonId}/`);
@@ -290,7 +327,9 @@ async function buscarProximoPokemonValido() {
   return novoPokemon;
 }
 
+// ==========================================
 // 6. AÇÕES DO LEILÃO
+// ==========================================
 async function sortearPokemon() {
   exibirMensagem("Sorteando novo Pokémon para o leilão...");
   const novoPokemon = await buscarProximoPokemonValido();
@@ -457,9 +496,9 @@ function desistir() {
     limparTelaPokemon();
 
     if (leilaoAtual.time1.length >= 6 && leilaoAtual.time2.length >= 6) {
-      exibirMensagem(`⚔️ Times completos! Iniciando a Batalha Final...`);
+      exibirMensagem(`⚔️ Times completos! Abrindo painel de organização...`);
       setTimeout(() => {
-        iniciarBatalhaAutomatica(leilaoAtual.time1, leilaoAtual.time2, meuNome, nomeJ2Local);
+        abrirModalOrganizacao(leilaoAtual.time1, meuNome);
       }, 1500);
     }
   }
@@ -488,12 +527,15 @@ async function finalizarVenda(jogadorVencedor, valorFinal) {
 
     const nomeVencedor = jogadorVencedor === 1 ? dados.jogador1 : dados.jogador2;
 
+    // QUANDO OS TIMES ATINGEM 6, INICIALIZA OS CAMPOS DE ORGANIZAÇÃO NO FIREBASE
     if (time1.length >= 6 && time2.length >= 6) {
       salaRef.update({
         saldoJ1: novoSaldoJ1,
         saldoJ2: novoSaldoJ2,
         time1: time1,
         time2: time2,
+        time1Organizado: null,
+        time2Organizado: null,
         pokemonAtual: null,
         lanceAtual: 0,
         quemDeuMaiorLance: null,
@@ -518,4 +560,80 @@ async function finalizarVenda(jogadorVencedor, valorFinal) {
       ultimaAtualizacao: Date.now()
     });
   });
+}
+
+// ==========================================
+// 7. MÓDULO DE ORGANIZAÇÃO DA ORDEM DO TIME
+// ==========================================
+let meuTimeOrganizado = [];
+
+function abrirModalOrganizacao(timeOriginal, nomeJogador) {
+  let modalOrg = document.getElementById('modal-organizar');
+  if (!modalOrg) {
+    const divModal = document.createElement('div');
+    divModal.id = 'modal-organizar';
+    divModal.style.cssText = "display: flex; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 999; justify-content: center; align-items: center; padding: 10px; box-sizing: border-box;";
+    divModal.innerHTML = `
+      <div style="background: #222; padding: 20px; border-radius: 12px; width: 100%; max-width: 450px; text-align: center; color: white; border: 2px solid #ffcb05; box-shadow: 0 0 20px rgba(255,203,5,0.5); display: flex; flex-direction: column; max-height: 90vh;">
+        <h2 style="font-size: 1.2rem; margin-bottom: 8px;">🏆 Organizar Ordem de Batalha</h2>
+        <p style="font-size: 12px; color: #ccc; margin-bottom: 12px;">Use as setas para definir quem vai primeiro (1º) até o último (6º).</p>
+        
+        <div id="lista-organizacao" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; overflow-y: auto; flex-grow: 1; padding-right: 5px;"></div>
+        
+        <button onclick="confirmarOrdemTime()" style="background: #4caf50; color: white; border: none; padding: 10px; font-weight: bold; border-radius: 5px; cursor: pointer; font-size: 14px; width: 100%;">Confirmar Ordem e Ir para Batalha</button>
+      </div>
+    `;
+    document.body.appendChild(divModal);
+    modalOrg = divModal;
+  }
+
+  modalOrg.style.display = 'flex';
+  meuTimeOrganizado = [...timeOriginal];
+  renderizarListaOrganizacao();
+}
+
+function renderizarListaOrganizacao() {
+  const lista = document.getElementById('lista-organizacao');
+  if (!lista) return;
+
+  lista.innerHTML = "";
+  meuTimeOrganizado.forEach((pkm, index) => {
+    lista.innerHTML += `
+      <div style="display: flex; align-items: center; justify-content: space-between; background: #333; padding: 8px 12px; border-radius: 6px; border: 1px solid #555;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-weight: bold; color: #ffcb05; width: 25px;">#${index + 1}</span>
+          <img src="${pkm.imagem}" style="width: 40px; height: 40px; object-fit: contain;">
+          <span style="font-size: 14px; font-weight: bold;">${pkm.nome}</span>
+        </div>
+        <div style="display: flex; gap: 5px;">
+          <button onclick="moverPokemon(${index}, -1)" style="background: #555; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer;" ${index === 0 ? 'disabled style="opacity: 0.3;"' : ''}>⬆️</button>
+          <button onclick="moverPokemon(${index}, 1)" style="background: #555; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer;" ${index === meuTimeOrganizado.length - 1 ? 'disabled style="opacity: 0.3;"' : ''}>⬇️</button>
+        </div>
+      </div>
+    `;
+  });
+}
+
+function moverPokemon(index, direcao) {
+  const novoIndex = index + direcao;
+  if (novoIndex < 0 || novoIndex >= meuTimeOrganizado.length) return;
+
+  const temp = meuTimeOrganizado[index];
+  meuTimeOrganizado[index] = meuTimeOrganizado[novoIndex];
+  meuTimeOrganizado[novoIndex] = temp;
+
+  renderizarListaOrganizacao();
+}
+
+function confirmarOrdemTime() {
+  const modal = document.getElementById('modal-organizar');
+  if (modal) modal.style.display = 'none';
+
+  if (salaRef) {
+    const campoAtualizar = meuNumeroJogador === 1 ? { time1Organizado: meuTimeOrganizado } : { time2Organizado: meuTimeOrganizado };
+    salaRef.update(campoAtualizar);
+    exibirMensagem("Ordem salva! Aguardando o oponente organizar o time...");
+  } else {
+    iniciarBatalhaAutomatica(meuTimeOrganizado, leilaoAtual.time2, meuNome, nomeJ2Local);
+  }
 }
