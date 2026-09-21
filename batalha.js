@@ -104,7 +104,7 @@ async function iniciarBatalhaAutomatica(time1, time2, nome1, nome2) {
     }
 
     if (p1.status.hp <= 0) {
-      log.innerHTML += `<p style="color: #ff4d4d;">☠️ O ${p1.nome} de${nome1} desmaiou!</p>";
+      log.innerHTML += `<p style="color: #ff4d4d;">☠️ O ${p1.nome} de ${nome1} desmaiou!</p>`;
       i++;
     }
     if (p2.status.hp <= 0) {
@@ -155,7 +155,6 @@ function executarAtaqueTurno(atacante, defensor, numeroDefensor, logElemento) {
 
   if (teveImunidade) {
     danoFinal = 0;
-    // Mecânica de Struggle (O golpe falha e o atacante sofre dano de recuo por desespero)
     let danoStruggle = Math.max(5, Math.floor(atacante.status.maxHp * 0.08));
     atacante.status.hp -= danoStruggle;
     if (atacante.status.hp < 0) atacante.status.hp = 0;
@@ -176,7 +175,6 @@ function executarAtaqueTurno(atacante, defensor, numeroDefensor, logElemento) {
     }
   }
 
-  // Efeito visual de tremer no defensor
   const imagemDefensor = document.getElementById(`batalha-img-pkm${numeroDefensor}`);
   if (imagemDefensor) {
     imagemDefensor.classList.add('efeito-tremer');
@@ -189,10 +187,10 @@ function executarAtaqueTurno(atacante, defensor, numeroDefensor, logElemento) {
 }
 
 function atualizarBarrasHP(p1, p2) {
-  const bar1 = document.getElementById('batalha-hp-1');
-  const bar2 = document.getElementById('batalha-hp-2');
+  // Ajustado para bater com os IDs do seu HTML: hp-bar-1 e hp-bar-2
+  const bar1 = document.getElementById('hp-bar-1');
+  const bar2 = document.getElementById('hp-bar-2');
 
-  // Seletores para os textos numéricos de HP (se criados no HTML)
   const textoHp1 = document.getElementById('batalha-texto-hp-1');
   const textoHp2 = document.getElementById('batalha-texto-hp-2');
 
@@ -200,13 +198,12 @@ function atualizarBarrasHP(p1, p2) {
     let pct1 = Math.max(0, (p1.status.hp / p1.status.maxHp) * 100);
     bar1.style.width = `${pct1}%`;
     
-    // Mudança de cor dinâmica baseada na porcentagem
     if (pct1 > 50) {
-      bar1.style.backgroundColor = '#4caf50'; // Verde
+      bar1.style.backgroundColor = '#4caf50';
     } else if (pct1 > 20) {
-      bar1.style.backgroundColor = '#ff9800'; // Amarelo/Laranja
+      bar1.style.backgroundColor = '#ff9800';
     } else {
-      bar1.style.backgroundColor = '#f44336'; // Vermelho crítico
+      bar1.style.backgroundColor = '#f44336';
     }
   }
 
@@ -223,7 +220,6 @@ function atualizarBarrasHP(p1, p2) {
     }
   }
 
-  // Atualiza os números de HP se os elementos de texto existirem na tela
   if (textoHp1) textoHp1.innerText = `${Math.max(0, p1.status.hp)} / ${p1.status.maxHp}`;
   if (textoHp2) textoHp2.innerText = `${Math.max(0, p2.status.hp)} / ${p2.status.maxHp}`;
 }
