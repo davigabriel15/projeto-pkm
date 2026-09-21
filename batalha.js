@@ -146,18 +146,15 @@ function executarAtaqueTurno(atacante, defensor, numeroDefensor, logElemento) {
     multiplicadorTipo = teveImunidade ? 0.0 : melhorEfetividade;
   }
 
-  // Removido o Math.random() de crítico para garantir que o cálculo seja 100% determinístico e idêntico em qualquer tela
   let danoFinal = Math.floor(danoBase * multiplicadorTipo);
-  if (multiplicadorTipo > 0.0 && danoFinal < 1) danoFinal = 1;
-
   let textoExtra = "";
 
+  // Correção de imunidade aplicada com segurança para evitar travamentos (loops infinitos)
   if (teveImunidade) {
-    danoFinal = 0;
-    textoExtra = " <span style='color: gray;'>(Não teve efeito por imunidade de tipo!)</span>";
+    danoFinal = 1;
+    textoExtra = " <span style='color: gray;'>(Imunidade de tipo! Causou 1 de dano por esforço)</span>";
   } else {
-    defensor.status.hp -= danoFinal;
-    if (defensor.status.hp < 0) defensor.status.hp = 0;
+    if (danoFinal < 1) danoFinal = 1;
 
     if (multiplicadorTipo > 1.0) {
       textoExtra = " <span style='color: #4caf50;'>(Foi Super Efetivo!)</span>";
@@ -165,6 +162,9 @@ function executarAtaqueTurno(atacante, defensor, numeroDefensor, logElemento) {
       textoExtra = " <span style='color: #ff9800;'>(Não foi muito efetivo...)</span>";
     }
   }
+
+  defensor.status.hp -= danoFinal;
+  if (defensor.status.hp < 0) defensor.status.hp = 0;
 
   const imagemDefensor = document.getElementById(`batalha-img-pkm${numeroDefensor}`);
   if (imagemDefensor) {
