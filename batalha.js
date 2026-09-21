@@ -1,5 +1,5 @@
 // ==========================================
-// MÓDULO DE BATALHA APRIMORADO - CORRIGIDO E ESTÁVEL
+// MÓDULO DE BATALHA SINCRONIZADO E DETERMINÍSTICO
 // ==========================================
 
 const tabelaVantagens = {
@@ -58,7 +58,7 @@ async function iniciarBatalhaAutomatica(time1, time2, nome1, nome2) {
   document.getElementById('batalha-nome-j1').innerText = nome1;
   document.getElementById('batalha-nome-j2').innerText = nome2;
 
-  log.innerHTML = "<p>⚔️ Organizando equipes e carregando status na arena...</p>";
+  log.innerHTML = "<p>⚔️ Sincronizando equipes e carregando status na arena...</p>";
 
   let lutadores1 = await Promise.all(time1.map(async p => ({ ...p, status: await carregarStatusPokemon(p.id) })));
   let lutadores2 = await Promise.all(time2.map(async p => ({ ...p, status: await carregarStatusPokemon(p.id) })));
@@ -83,6 +83,7 @@ async function iniciarBatalhaAutomatica(time1, time2, nome1, nome2) {
     while (p1.status.hp > 0 && p2.status.hp > 0) {
       await new Promise(r => setTimeout(r, 900));
 
+      // Ordem estrita por velocidade pura (sem empates aleatórios)
       let primeiro = p1.status.velocidade >= p2.status.velocidade ? p1 : p2;
       let segundo = primeiro === p1 ? p2 : p1;
       let numeroDefensorSegundo = primeiro === p1 ? 2 : 1;
@@ -145,10 +146,8 @@ function executarAtaqueTurno(atacante, defensor, numeroDefensor, logElemento) {
     multiplicadorTipo = teveImunidade ? 0.0 : melhorEfetividade;
   }
 
-  let ehCritico = Math.random() < 0.12;
-  let multiplicadorCritico = ehCritico ? 1.5 : 1.0;
-
-  let danoFinal = Math.floor(danoBase * multiplicadorTipo * multiplicadorCritico);
+  // Removido o Math.random() de crítico para garantir que o cálculo seja 100% determinístico e idêntico em qualquer tela
+  let danoFinal = Math.floor(danoBase * multiplicadorTipo);
   if (multiplicadorTipo > 0.0 && danoFinal < 1) danoFinal = 1;
 
   let textoExtra = "";
@@ -164,10 +163,6 @@ function executarAtaqueTurno(atacante, defensor, numeroDefensor, logElemento) {
       textoExtra = " <span style='color: #4caf50;'>(Foi Super Efetivo!)</span>";
     } else if (multiplicadorTipo < 1.0) {
       textoExtra = " <span style='color: #ff9800;'>(Não foi muito efetivo...)</span>";
-    }
-
-    if (ehCritico) {
-      textoExtra += " <strong style='color: #ff5722;'>🔥 ACERTO CRÍTICO!</strong>";
     }
   }
 
