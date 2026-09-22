@@ -183,22 +183,23 @@ function escutarAtualizacoesSala() {
     atualizarHTMLTime(1, dados.time1 || [], nomeJ1);
     atualizarHTMLTime(2, dados.time2 || [], nomeJ2);
 
-    // FLUXO DE ORGANIZAÇÃO E DISPARO DE BATALHA QUANDO OS TIMES CHEGAM A 6
+    // FLUXO ONLINE: QUANDO OS TIMES CHEGAM A 6
     if (dados.time1 && dados.time1.length >= 6 && dados.time2 && dados.time2.length >= 6) {
-      const time1Pronto = dados.time1Organizado || dados.time1;
-      const time2Pronto = dados.time2Organizado || dados.time2;
+      const time1Pronto = dados.time1ProntoParaBatalha || dados.time1Organizado || dados.time1;
+      const time2Pronto = dados.time2ProntoParaBatalha || dados.time2Organizado || dados.time2;
 
-      // Se ambos já organizaram, fecha o modal e inicia a batalha
-      if (dados.time1Organizado && dados.time2Organizado) {
+      // Se ambos já passaram pela loja e estão prontos, inicia a batalha
+      if (dados.time1ProntoParaBatalha && dados.time2ProntoParaBatalha) {
         const modalOrg = document.getElementById('modal-organizar');
         if (modalOrg) modalOrg.style.display = 'none';
+        const modalLoja = document.getElementById('modal-loja');
+        if (modalLoja) modalLoja.style.display = 'none';
 
         const modalBatalha = document.getElementById('modal-batalha');
         if (modalBatalha && modalBatalha.style.display !== 'flex') {
           iniciarBatalhaAutomatica(time1Pronto, time2Pronto, nomeJ1, nomeJ2);
         }
       } else {
-        // Verifica se o jogador atual já enviou sua ordem
         const jaEnvieiOrdem = meuNumeroJogador === 1 ? dados.time1Organizado : dados.time2Organizado;
         const meuTimeOriginal = meuNumeroJogador === 1 ? dados.time1 : dados.time2;
 
@@ -207,10 +208,6 @@ function escutarAtualizacoesSala() {
           if (!modalOrg || modalOrg.style.display !== 'flex') {
             abrirModalOrganizacao(meuTimeOriginal, meuNumeroJogador === 1 ? nomeJ1 : nomeJ2);
           }
-        } else {
-          const modalOrg = document.getElementById('modal-organizar');
-          if (modalOrg) modalOrg.style.display = 'none';
-          exibirMensagem("Ordem salva! Aguardando o oponente organizar o time...");
         }
       }
     }
@@ -527,7 +524,6 @@ async function finalizarVenda(jogadorVencedor, valorFinal) {
 
     const nomeVencedor = jogadorVencedor === 1 ? dados.jogador1 : dados.jogador2;
 
-    // QUANDO OS TIMES ATINGEM 6, INICIALIZA OS CAMPOS DE ORGANIZAÇÃO NO FIREBASE
     if (time1.length >= 6 && time2.length >= 6) {
       salaRef.update({
         saldoJ1: novoSaldoJ1,
@@ -580,7 +576,7 @@ function abrirModalOrganizacao(timeOriginal, nomeJogador) {
         
         <div id="lista-organizacao" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; overflow-y: auto; flex-grow: 1; padding-right: 5px;"></div>
         
-        <button onclick="confirmarOrdemTime()" style="background: #4caf50; color: white; border: none; padding: 10px; font-weight: bold; border-radius: 5px; cursor: pointer; font-size: 14px; width: 100%;">Confirmar Ordem e Ir para Batalha</button>
+        <button onclick="confirmarOrdemTime()" style="background: #4caf50; color: white; border: none; padding: 10px; font-weight: bold; border-radius: 5px; cursor: pointer; font-size: 14px; width: 100%;">Confirmar Ordem e Ir para a Loja</button>
       </div>
     `;
     document.body.appendChild(divModal);
@@ -625,30 +621,134 @@ function moverPokemon(index, direcao) {
   renderizarListaOrganizacao();
 }
 
-// Substitua a função confirmarOrdemTime inteira no seu script.js por esta:
 function confirmarOrdemTime() {
-  const modal = document.getElementById('modal-organizar');
-  if (modal) modal.style.display = 'none';
+  const modalOrg = document.getElementById('modal-organizar');
+  if (modalOrg) modalOrg.style.display = 'none';
 
   if (salaRef) {
-    const campoAtualizar = meuNumeroJogador === 1 ? { time1Organizado: meuTimeOrganizado } : { time2Organizado: meuTimeOrganizado };
-    salaRef.update(campoAtualizar);
-    exibirMensagem("Ordem salva! Aguardando o oponente organizar o time...");
+    // MODO ONLINE: Salva a ordem e abre a loja local do jogador com o saldo restante
+    salaRef.once("value").then((snapshot) => {
+      const dados = snapshot.val();
+      const campoAtualizar = meuNumeroJogador === 1 ? { time1Organizado: meuTimeOrganizado } : { time2Organizado: meuTimeOrganizado };
+      salaRef.update(campoAtualizar);
+
+      const saldoRestante = meuNumeroJogador === 1 ? dados.saldoJ1 : dados.saldoJ2;
+
+      iniciarFluxoLoja(meuTimeOrganizado, saldoRestante, function(timeComItensFinal) {
+        const campoPronto = meuNumeroJogador === 1 ? { time1ProntoParaBatalha: timeComItensFinal } : { time2ProntoParaBatalha: timeComItensFinal };
+        salaRef.update(campoPronto);
+        exibirMensagem("Compras finalizadas! Aguardando o oponente na loja...");
+      });
+    });
   } else {
     // MODO LOCAL (1 TELA)
-    // Se o Jogador 1 acabou de organizar, guardamos o time dele e abrimos para o Jogador 2
     if (!window.time1OrganizadoLocal) {
       window.time1OrganizadoLocal = [...meuTimeOrganizado];
-      exibirMensagem(`Agora é a vez de ${nomeJ2Local} organizar o time!`);
-      setTimeout(() => {
+      let saldoJ1Restante = parseInt(document.getElementById('saldo-j1').innerText);
+
+      exibirMensagem(`Loja de ${meuNome}! Gaste seu saldo restante.`);
+      iniciarFluxoLoja(window.time1OrganizadoLocal, saldoJ1Restante, function(time1ComItens) {
+        window.time1ComItensLocal = time1ComItens;
+        
+        exibirMensagem(`Agora é a vez de ${nomeJ2Local} organizar o time!`);
         abrirModalOrganizacao(leilaoAtual.time2, nomeJ2Local);
-      }, 500);
+      });
     } else {
-      // Se o Jogador 2 acabou de organizar, temos os dois times prontos!
-      const time1Pronto = window.time1OrganizadoLocal;
-      const time2Pronto = [...meuTimeOrganizado];
-      window.time1OrganizadoLocal = null; // limpa para futuros jogos
-      iniciarBatalhaAutomatica(time1Pronto, time2Pronto, meuNome, nomeJ2Local);
+      let saldoJ2Restante = parseInt(document.getElementById('saldo-j2').innerText);
+
+      exibirMensagem(`Loja de ${nomeJ2Local}! Gaste seu saldo restante.`);
+      iniciarFluxoLoja(meuTimeOrganizado, saldoJ2Restante, function(time2ComItens) {
+        const time1Pronto = window.time1ComItensLocal;
+        const time2Pronto = time2ComItens;
+
+        window.time1OrganizadoLocal = null;
+        window.time1ComItensLocal = null;
+
+        iniciarBatalhaAutomatica(time1Pronto, time2Pronto, meuNome, nomeJ2Local);
+      });
     }
+  }
+}
+
+// ==========================================
+// 8. MÓDULO DA LOJA DE ITENS PÓS-LEILÃO
+// ==========================================
+let carrinhoItemSelecionado = null; 
+let saldoAtualJogador = 0;
+let meuTimeLoja = [];
+let callbackFimDaLoja = null;
+
+function iniciarFluxoLoja(timeDoJogador, saldoRestante, callbackQuandoTerminar) {
+  meuTimeLoja = timeDoJogador.map(p => ({ ...p, itemEquipado: null }));
+  saldoAtualJogador = saldoRestante;
+  callbackFimDaLoja = callbackQuandoTerminar;
+
+  const modalLoja = document.getElementById('modal-loja');
+  if (modalLoja) modalLoja.style.display = 'flex';
+
+  const displaySaldo = document.getElementById('valor-saldo-atual');
+  if (displaySaldo) displaySaldo.innerText = saldoAtualJogador;
+
+  renderizarSeletorEquipamentoLoja();
+}
+
+function renderizarSeletorEquipamentoLoja() {
+  const container = document.getElementById('lista-equipar-pkm');
+  if (!container) return;
+
+  container.innerHTML = "";
+  meuTimeLoja.forEach((pkm, index) => {
+    container.innerHTML += `
+      <div style="display: flex; align-items: center; justify-content: space-between; background: #333; padding: 6px 10px; border-radius: 6px; border: 1px solid #555; margin-bottom: 5px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <img src="${pkm.imagem}" style="width: 35px; height: 35px; object-fit: contain;">
+          <span style="font-size: 13px; color: white;">${pkm.nome} <b style="color: #ffcb05;">(${pkm.itemEquipado || 'Sem Item'})</b></span>
+        </div>
+        <button onclick="equiparItemNoSlot(${index})" style="background: #007bff; color: white; border: none; padding: 5px 8px; border-radius: 4px; font-size: 12px; cursor: pointer;">Equipar</button>
+      </div>
+    `;
+  });
+}
+
+function comprarItem(nomeItem, preco) {
+  if (saldoAtualJogador < preco) {
+    alert("Você não tem dinheiro suficiente restante do leilão!");
+    return;
+  }
+  carrinhoItemSelecionado = nomeItem;
+  alert(`Você selecionou ${nomeItem}! Agora clique em "Equipar" no Pokémon que vai receber o item.`);
+}
+
+function equiparItemNoSlot(index) {
+  if (!carrinhoItemSelecionado) {
+    alert("Escolha um item na loja primeiro clicando em 'Comprar'!");
+    return;
+  }
+
+  let precoItem = 0;
+  if (carrinhoItemSelecionado === 'Sitrus Berry') precoItem = 15;
+  if (carrinhoItemSelecionado === 'Item de Velocidade') precoItem = 20;
+  if (carrinhoItemSelecionado === 'Mega Stone') precoItem = 30;
+
+  if (saldoAtualJogador < precoItem) {
+    alert("Saldo insuficiente para este item!");
+    carrinhoItemSelecionado = null;
+    return;
+  }
+
+  saldoAtualJogador -= precoItem;
+  meuTimeLoja[index].itemEquipado = carrinhoItemSelecionado;
+  carrinhoItemSelecionado = null;
+
+  document.getElementById('valor-saldo-atual').innerText = saldoAtualJogador;
+  renderizarSeletorEquipamentoLoja();
+}
+
+function finalizarLoja() {
+  const modalLoja = document.getElementById('modal-loja');
+  if (modalLoja) modalLoja.style.display = 'none';
+
+  if (typeof callbackFimDaLoja === 'function') {
+    callbackFimDaLoja(meuTimeLoja, saldoAtualJogador);
   }
 }

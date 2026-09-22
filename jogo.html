@@ -86,6 +86,36 @@
         <button id="btn-fechar-batalha" onclick="fecharModalBatalha()" style="display: none; background: #ffcb05; color: #3c5aa6; border: none; padding: 8px 15px; font-weight: bold; border-radius: 5px; cursor: pointer;">Fechar e Voltar ao Menu</button>
       </div>
     </div>
+    <!-- Modal da Loja de Itens -->
+<div id="modal-loja" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 999; justify-content: center; align-items: center; padding: 10px; box-sizing: border-box;">
+    <div style="background: #222; padding: 20px; border-radius: 12px; width: 100%; max-width: 500px; text-align: center; color: white; border: 2px solid #28a745; box-shadow: 0 0 20px rgba(40,167,69,0.5); display: flex; flex-direction: column; max-height: 90vh;">
+        <h2 style="font-size: 1.3rem; margin-bottom: 5px; color: #28a745;">🛍️ Loja de Itens Pós-Leilão</h2>
+        <p style="font-size: 12px; color: #ccc; margin-bottom: 10px;">Gaste seu dinheiro restante para equipar seus Pokémon!</p>
+        
+        <div id="saldo-loja-display" style="font-size: 14px; font-weight: bold; margin-bottom: 10px; color: #ffcb05;">Saldo: R$ <span id="valor-saldo-atual">0</span></div>
+
+            <!-- Lista de Itens Disponíveis para Compra -->
+            <div style="display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 15px; overflow-y: auto; max-height: 150px; text-align: left;">
+                <div style="background: #333; padding: 8px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
+                    <div><strong>Sitrus Berry</strong> (Cura 30 HP quando baixar da metade) - <span style="color:#28a745;">R$ 15</span></div>
+                    <button onclick="comprarItem('Sitrus Berry', 15)" style="background: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Comprar</button>
+                </div>
+                <div style="background: #333; padding: 8px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
+                    <div><strong>Item de Velocidade</strong> (+20% na Velocidade) - <span style="color:#28a745;">R$ 20</span></div>
+                    <button onclick="comprarItem('Item de Velocidade', 20)" style="background: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Comprar</button>
+                </div>
+                <div style="background: #333; padding: 8px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
+                    <div><strong>Mega Stone</strong> (+30 no Ataque) - <span style="color:#28a745;">R$ 30</span></div>
+                    <button onclick="comprarItem('Mega Stone', 30)" style="background: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Comprar</button>
+                </div>
+            </div>
+
+            <h3 style="font-size: 1rem; margin-bottom: 5px; text-align: left;">Selecione o Pokémon para equipar o item comprado:</h3>
+            <div id="lista-equipar-pkm" style="display: flex; flex-direction: column; gap: 6px; overflow-y: auto; flex-grow: 1; margin-bottom: 15px; max-height: 150px;"></div>
+
+            <button onclick="finalizarLoja()" style="background: #ffcb05; color: #3c5aa6; border: none; padding: 10px; font-weight: bold; border-radius: 5px; cursor: pointer; font-size: 14px; width: 100%;">Concluir Compras e Ir para Batalha</button>
+        </div>
+    </div>
 
     <script src="config.js"></script>
     <script src="batalha.js"></script>
