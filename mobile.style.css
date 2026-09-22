@@ -305,3 +305,33 @@ body {
 .efeito-tremer {
   animation: tremer 0.4s ease-in-out;
 }
+/* Ajuste para os cards de itens na loja */
+.item-card, .loja-item {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  position: relative; /* Evita que elementos absolutos baguncem o layout */
+  height: auto;       /* Deixa a altura flexível de acordo com o conteúdo */
+  min-height: 280px;  /* Altura mínima segura para caber imagem, nome e preço */
+  padding: 15px;
+  box-sizing: border-box;
+}
+
+/* Garante que os textos de nome, descrição e preço tenham espaçamento vertical natural */
+.item-card h3, .loja-item h3 {
+  margin: 8px 0;
+  font-size: 16px;
+  line-height: 1.2;
+}
+
+.item-card p, .loja-item p {
+  margin: 5px 0 12px 0;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.item-card span, .loja-item .preco {
+  display: block;
+  margin-top: auto; /* Empurra o preço/botão sempre para a base do card */
+}

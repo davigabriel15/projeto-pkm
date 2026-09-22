@@ -183,12 +183,10 @@ function escutarAtualizacoesSala() {
     atualizarHTMLTime(1, dados.time1 || [], nomeJ1);
     atualizarHTMLTime(2, dados.time2 || [], nomeJ2);
 
-    // FLUXO ONLINE: QUANDO OS TIMES CHEGAM A 6
     if (dados.time1 && dados.time1.length >= 6 && dados.time2 && dados.time2.length >= 6) {
       const time1Pronto = dados.time1ProntoParaBatalha || dados.time1Organizado || dados.time1;
       const time2Pronto = dados.time2ProntoParaBatalha || dados.time2Organizado || dados.time2;
 
-      // Se ambos já passaram pela loja e estão prontos, inicia a batalha
       if (dados.time1ProntoParaBatalha && dados.time2ProntoParaBatalha) {
         const modalOrg = document.getElementById('modal-organizar');
         if (modalOrg) modalOrg.style.display = 'none';
@@ -313,7 +311,8 @@ async function buscarProximoPokemonValido() {
         novoPokemon = {
           id: dados.id,
           nome: dados.name.toUpperCase(),
-          imagem: dados.sprites.other['official-artwork'].front_default
+          imagem: dados.sprites.other['official-artwork'].front_default,
+          tipos: dados.types.map(t => t.type.name)
         };
       }
     } catch (erro) {
@@ -626,7 +625,6 @@ function confirmarOrdemTime() {
   if (modalOrg) modalOrg.style.display = 'none';
 
   if (salaRef) {
-    // MODO ONLINE: Salva a ordem e abre a loja local do jogador com o saldo restante
     salaRef.once("value").then((snapshot) => {
       const dados = snapshot.val();
       const campoAtualizar = meuNumeroJogador === 1 ? { time1Organizado: meuTimeOrganizado } : { time2Organizado: meuTimeOrganizado };
@@ -641,7 +639,6 @@ function confirmarOrdemTime() {
       });
     });
   } else {
-    // MODO LOCAL (1 TELA)
     if (!window.time1OrganizadoLocal) {
       window.time1OrganizadoLocal = [...meuTimeOrganizado];
       let saldoJ1Restante = parseInt(document.getElementById('saldo-j1').innerText);
@@ -678,6 +675,12 @@ let saldoAtualJogador = 0;
 let meuTimeLoja = [];
 let callbackFimDaLoja = null;
 
+// IDs oficiais de Pokémon que possuem Mega Evolução na PokéAPI (Ex: Mewtwo ID 150, Charizard ID 6, etc.)
+function podeUsarMegaStone(pokemonId) {
+  const idsComMega = [3, 6, 9, 65, 94, 115, 130, 142, 150, 212, 214, 248, 257, 282, 306, 359, 376, 380, 381, 448, 460];
+  return idsComMega.includes(Number(pokemonId));
+}
+
 function iniciarFluxoLoja(timeDoJogador, saldoRestante, callbackQuandoTerminar) {
   meuTimeLoja = timeDoJogador.map(p => ({ ...p, itemEquipado: null }));
   saldoAtualJogador = saldoRestante;
@@ -689,6 +692,7 @@ function iniciarFluxoLoja(timeDoJogador, saldoRestante, callbackQuandoTerminar) 
   const displaySaldo = document.getElementById('valor-saldo-atual');
   if (displaySaldo) displaySaldo.innerText = saldoAtualJogador;
 
+  exibirMensagemLoja("🛒 Escolha um item para comprar e depois clique em 'Equipar' no Pokémon desejado.");
   renderizarSeletorEquipamentoLoja();
 }
 
@@ -712,16 +716,22 @@ function renderizarSeletorEquipamentoLoja() {
 
 function comprarItem(nomeItem, preco) {
   if (saldoAtualJogador < preco) {
-    alert("Você não tem dinheiro suficiente restante do leilão!");
+    exibirMensagemLoja("⚠️ Você não tem dinheiro suficiente restante do leilão!");
     return;
   }
   carrinhoItemSelecionado = nomeItem;
-  alert(`Você selecionou ${nomeItem}! Agora clique em "Equipar" no Pokémon que vai receber o item.`);
+  exibirMensagemLoja(`✅ Você selecionou ${nomeItem}! Agora clique em "Equipar" no Pokémon correspondente.`);
 }
 
 function equiparItemNoSlot(index) {
   if (!carrinhoItemSelecionado) {
-    alert("Escolha um item na loja primeiro clicando em 'Comprar'!");
+    exibirMensagemLoja("⚠️ Escolha um item na loja primeiro clicando em 'Comprar'!");
+    return;
+  }
+
+  // Validação restrita para Mega Stone (Ex: Mewtwo ID 150 e outros elegíveis)
+  if (carrinhoItemSelecionado === 'Mega Stone' && !podeUsarMegaStone(meuTimeLoja[index].id)) {
+    exibirMensagemLoja(`⚠️ ${meuTimeLoja[index].nome} não pode equipar uma Mega Stone!`);
     return;
   }
 
@@ -731,7 +741,7 @@ function equiparItemNoSlot(index) {
   if (carrinhoItemSelecionado === 'Mega Stone') precoItem = 30;
 
   if (saldoAtualJogador < precoItem) {
-    alert("Saldo insuficiente para este item!");
+    exibirMensagemLoja("⚠️ Saldo insuficiente para este item!");
     carrinhoItemSelecionado = null;
     return;
   }
@@ -740,15 +750,29 @@ function equiparItemNoSlot(index) {
   meuTimeLoja[index].itemEquipado = carrinhoItemSelecionado;
   carrinhoItemSelecionado = null;
 
-  document.getElementById('valor-saldo-atual').innerText = saldoAtualJogador;
+  const displaySaldo = document.getElementById('valor-saldo-atual');
+  if (displaySaldo) displaySaldo.innerText = saldoAtualJogador;
+  
   renderizarSeletorEquipamentoLoja();
+  exibirMensagemLoja("✨ Item equipado com sucesso!");
+}
+
+function exibirMensagemLoja(texto) {
+  const divMsg = document.getElementById('mensagem-loja');
+  if (divMsg) {
+    divMsg.innerText = texto;
+  }
 }
 
 function finalizarLoja() {
   const modalLoja = document.getElementById('modal-loja');
   if (modalLoja) modalLoja.style.display = 'none';
 
+  carrinhoItemSelecionado = null;
+
   if (typeof callbackFimDaLoja === 'function') {
-    callbackFimDaLoja(meuTimeLoja, saldoAtualJogador);
+    const callbackTemp = callbackFimDaLoja;
+    callbackFimDaLoja = null;
+    callbackTemp(meuTimeLoja, saldoAtualJogador);
   }
 }
