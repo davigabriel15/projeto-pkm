@@ -23,29 +23,60 @@ function calcularEfetividade(tipoAtacante, tipoDefensor) {
   return 1.0;
 }
 
-async function carregarStatusPokemon(id) {
+async function carregarStatusPokemon(pkmOriginal) {
   try {
-    const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
+    const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${pkmOriginal.id}`);
     const dados = await res.json();
     const tipos = dados.types.map(t => t.type.name);
 
-    const hpCalculado = dados.stats[0].base_stat * 2 + 50;
+    let hpCalculado = dados.stats[0].base_stat * 2 + 50;
+    let ataqueCalculado = dados.stats[1].base_stat;
+    let velocidadeCalculada = dados.stats[5].base_stat;
+    let imagemFinal = pkmOriginal.imagem;
+    let nomeFinal = pkmOriginal.nome;
+    let isMega = false;
+
+    // Se comprou a Mega Stone, tenta buscar a Mega Evolução
+    if (pkmOriginal.itemEquipado === 'Mega Stone') {
+      try {
+        const resMega = await fetch(`https://pokeapi.co/api/v2/pokemon/${dados.name}-mega`);
+        if (resMega.ok) {
+          const dadosMega = await resMega.json();
+          imagemFinal = dadosMega.sprites.other['official-artwork'].front_default || imagemFinal;
+          ataqueCalculado += 30; // Bônus da Mega
+          nomeFinal = `MEGA ${pkmOriginal.nome}`;
+          isMega = true;
+        } else {
+          ataqueCalculado += 30; // Garante o bônus mesmo se a sprite falhar
+        }
+      } catch (err) {
+        ataqueCalculado += 30;
+      }
+    }
+
+    // Bônus do Item de Velocidade
+    if (pkmOriginal.itemEquipado === 'Item de Velocidade') {
+      velocidadeCalculada = Math.floor(velocidadeCalculada * 1.2);
+    }
+
     return {
       hp: hpCalculado,
       maxHp: hpCalculado,
-      ataque: dados.stats[1].base_stat,
+      ataque: ataqueCalculado,
       defesa: dados.stats[2].base_stat,
-      velocidade: dados.stats[5].base_stat,
-      tipos: tipos
+      velocidade: velocidadeCalculada,
+      tipos: tipos,
+      imagem: imagemFinal,
+      nome: nomeFinal,
+      isMega: isMega,
+      itemEquipado: pkmOriginal.itemEquipado,
+      frutaConsumida: false
     };
   } catch (e) {
     return { 
-      hp: 150, 
-      maxHp: 150, 
-      ataque: 80, 
-      defesa: 70, 
-      velocidade: 80, 
-      tipos: ['normal'] 
+      hp: 150, maxHp: 150, ataque: 80, defesa: 70, velocidade: 80, 
+      tipos: ['normal'], imagem: pkmOriginal.imagem, nome: pkmOriginal.nome,
+      isMega: false, itemEquipado: pkmOriginal.itemEquipado, frutaConsumida: false
     };
   }
 }
@@ -60,8 +91,8 @@ async function iniciarBatalhaAutomatica(time1, time2, nome1, nome2) {
 
   log.innerHTML = "<p>⚔️ Sincronizando equipes e carregando status na arena...</p>";
 
-  let lutadores1 = await Promise.all(time1.map(async p => ({ ...p, status: await carregarStatusPokemon(p.id) })));
-  let lutadores2 = await Promise.all(time2.map(async p => ({ ...p, status: await carregarStatusPokemon(p.id) })));
+  let lutadores1 = await Promise.all(time1.map(async p => await carregarStatusPokemon(p)));
+  let lutadores2 = await Promise.all(time2.map(async p => await carregarStatusPokemon(p)));
 
   let i = 0, j = 0;
 
@@ -69,46 +100,53 @@ async function iniciarBatalhaAutomatica(time1, time2, nome1, nome2) {
     let p1 = lutadores1[i];
     let p2 = lutadores2[j];
 
+    // Atualiza imagens iniciais
     document.getElementById('batalha-img-pkm1').src = p1.imagem;
     document.getElementById('batalha-nome-pkm1').innerText = p1.nome;
     document.getElementById('batalha-img-pkm2').src = p2.imagem;
     document.getElementById('batalha-nome-pkm2').innerText = p2.nome;
 
     log.innerHTML += `<hr style="border: 0; border-top: 1px solid #444; margin: 8px 0;">`;
-    log.innerHTML += `<p style="color: #ffcb05;"><strong>Entram na arena:</strong> ${p1.nome} (${p1.status.tipos.join('/')}) vs ${p2.nome} (${p2.status.tipos.join('/')})!</p>`;
+    log.innerHTML += `<p style="color: #ffcb05;"><strong>Entram na arena:</strong> ${p1.nome} (${p1.status ? p1.tipos : p1.tipos.join('/')}) vs ${p2.nome}!</p>`;
+    
+    // ANIMAÇÃO DE MEGA EVOLUÇÃO SE TIVER MEGA STONE
+    if (p1.isMega) await dispararAnimacaoMega(1, log);
+    if (p2.isMega) await dispararAnimacaoMega(2, log);
+
     log.scrollTop = log.scrollHeight;
 
     atualizarBarrasHP(p1, p2);
 
-    while (p1.status.hp > 0 && p2.status.hp > 0) {
+    while (p1.hp > 0 && p2.hp > 0) {
       await new Promise(r => setTimeout(r, 900));
 
-      // Ordem estrita por velocidade pura (sem empates aleatórios)
-      let primeiro = p1.status.velocidade >= p2.status.velocidade ? p1 : p2;
+      let primeiro = p1.velocidade >= p2.velocidade ? p1 : p2;
       let segundo = primeiro === p1 ? p2 : p1;
       let numeroDefensorSegundo = primeiro === p1 ? 2 : 1;
       let numeroDefensorPrimeiro = primeiro === p1 ? 1 : 2;
 
       // Turno do primeiro
       executarAtaqueTurno(primeiro, segundo, numeroDefensorSegundo, log);
+      verificarEUsarFruta(segundo, numeroDefensorSegundo, log);
       atualizarBarrasHP(p1, p2);
 
-      if (segundo.status.hp <= 0) break;
+      if (segundo.hp <= 0) break;
 
       await new Promise(r => setTimeout(r, 600));
 
       // Turno do segundo
       executarAtaqueTurno(segundo, primeiro, numeroDefensorPrimeiro, log);
+      verificarEUsarFruta(primeiro, numeroDefensorPrimeiro, log);
       atualizarBarrasHP(p1, p2);
 
-      if (primeiro.status.hp <= 0) break;
+      if (primeiro.hp <= 0) break;
     }
 
-    if (p1.status.hp <= 0) {
+    if (p1.hp <= 0) {
       log.innerHTML += `<p style="color: #ff4d4d;">☠️ O ${p1.nome} de ${nome1} desmaiou!</p>`;
       i++;
     }
-    if (p2.status.hp <= 0) {
+    if (p2.hp <= 0) {
       log.innerHTML += `<p style="color: #ff4d4d;">☠️ O ${p2.nome} de ${nome2} desmaiou!</p>`;
       j++;
     }
@@ -124,17 +162,51 @@ async function iniciarBatalhaAutomatica(time1, time2, nome1, nome2) {
   if (btnFechar) btnFechar.style.display = 'inline-block';
 }
 
+async function dispararAnimacaoMega(numCombatente, logElemento) {
+  const imgElem = document.getElementById(`batalha-img-pkm${numCombatente}`);
+  if (imgElem) {
+    imgElem.style.transition = "transform 0.4s ease, filter 0.4s ease";
+    imgElem.style.transform = "scale(1.25)";
+    imgElem.style.filter = "brightness(2.2) drop-shadow(0 0 20px gold)";
+    await new Promise(r => setTimeout(r, 400));
+    imgElem.style.transform = "scale(1)";
+    imgElem.style.filter = "none";
+  }
+  logElemento.innerHTML += `<p style="color: #ffcb05;">✨ O Pokémon ativou a Mega Stone e Mega Evoluiu!</p>`;
+}
+
+function verificarEUsarFruta(combatente, numCombatente, logElemento) {
+  if (combatente.itemEquipado === 'Sitrus Berry' && !combatente.frutaConsumida) {
+    if (combatente.hp > 0 && combatente.hp <= combatente.maxHp / 2) {
+      combatente.frutaConsumida = true;
+      combatente.hp = Math.min(combatente.maxHp, combatente.hp + 50);
+
+      logElemento.innerHTML += `<p style="color: #4caf50;">🍑 ${combatente.nome} comeu a Sitrus Berry e recuperou 50 HP!</p>`;
+
+      // Animação flutuante na tela
+      const imgElem = document.getElementById(`batalha-img-pkm${numCombatente}`);
+      if (imgElem && imgElem.parentElement) {
+        const aviso = document.createElement('div');
+        aviso.innerText = "+50 HP 🍑";
+        aviso.style.cssText = "position: absolute; top: -15px; left: 50%; transform: translateX(-50%); color: #4caf50; font-weight: bold; font-size: 15px; text-shadow: 1px 1px 2px black; z-index: 100;";
+        imgElem.parentElement.appendChild(aviso);
+        setTimeout(() => aviso.remove(), 900);
+      }
+    }
+  }
+}
+
 function executarAtaqueTurno(atacante, defensor, numeroDefensor, logElemento) {
-  let danoBase = Math.max(12, Math.floor(atacante.status.ataque * 0.55 - defensor.status.defesa * 0.2));
+  let danoBase = Math.max(12, Math.floor(atacante.ataque * 0.55 - defensor.defesa * 0.2));
 
   let multiplicadorTipo = 1.0;
   let teveImunidade = false;
 
-  if (atacante.status.tipos && atacante.status.tipos.length > 0 && defensor.status.tipos) {
+  if (atacante.tipos && atacante.tipos.length > 0 && defensor.tipos) {
     let melhorEfetividade = 1.0;
 
-    for (let tAtk of atacante.status.tipos) {
-      for (let tDef of defensor.status.tipos) {
+    for (let tAtk of atacante.tipos) {
+      for (let tDef of defensor.tipos) {
         let ef = calcularEfetividade(tAtk, tDef);
         if (ef === 0.0) {
           teveImunidade = true;
@@ -149,10 +221,9 @@ function executarAtaqueTurno(atacante, defensor, numeroDefensor, logElemento) {
   let danoFinal = Math.floor(danoBase * multiplicadorTipo);
   let textoExtra = "";
 
-  // Correção de imunidade aplicada com segurança para evitar travamentos (loops infinitos)
   if (teveImunidade) {
     danoFinal = 1;
-    textoExtra = " <span style='color: gray;'>(Imunidade de tipo! Causou 1 de dano por esforço)</span>";
+    textoExtra = " <span style='color: gray;'>(Imunidade de tipo! Causou 1 de dano)</span>";
   } else {
     if (danoFinal < 1) danoFinal = 1;
 
@@ -163,8 +234,8 @@ function executarAtaqueTurno(atacante, defensor, numeroDefensor, logElemento) {
     }
   }
 
-  defensor.status.hp -= danoFinal;
-  if (defensor.status.hp < 0) defensor.status.hp = 0;
+  defensor.hp -= danoFinal;
+  if (defensor.hp < 0) defensor.hp = 0;
 
   const imagemDefensor = document.getElementById(`batalha-img-pkm${numeroDefensor}`);
   if (imagemDefensor) {
@@ -185,7 +256,7 @@ function atualizarBarrasHP(p1, p2) {
   const textoHp2 = document.getElementById('batalha-texto-hp-2');
 
   if (bar1) {
-    let pct1 = Math.max(0, (p1.status.hp / p1.status.maxHp) * 100);
+    let pct1 = Math.max(0, (p1.hp / p1.maxHp) * 100);
     bar1.style.width = `${pct1}%`;
     
     if (pct1 > 50) bar1.style.backgroundColor = '#4caf50';
@@ -194,7 +265,7 @@ function atualizarBarrasHP(p1, p2) {
   }
 
   if (bar2) {
-    let pct2 = Math.max(0, (p2.status.hp / p2.status.maxHp) * 100);
+    let pct2 = Math.max(0, (p2.hp / p2.maxHp) * 100);
     bar2.style.width = `${pct2}%`;
 
     if (pct2 > 50) bar2.style.backgroundColor = '#4caf50';
@@ -202,8 +273,8 @@ function atualizarBarrasHP(p1, p2) {
     else bar2.style.backgroundColor = '#f44336';
   }
 
-  if (textoHp1) textoHp1.innerText = `${Math.max(0, p1.status.hp)} / ${p1.status.maxHp}`;
-  if (textoHp2) textoHp2.innerText = `${Math.max(0, p2.status.hp)} / ${p2.status.maxHp}`;
+  if (textoHp1) textoHp1.innerText = `${Math.max(0, p1.hp)} / ${p1.maxHp}`;
+  if (textoHp2) textoHp2.innerText = `${Math.max(0, p2.hp)} / ${p2.maxHp}`;
 }
 
 function fecharModalBatalha() {
