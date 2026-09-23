@@ -9,6 +9,21 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <link rel="shortcut icon" href="imagens/favicon_io/favicon-32x32.png" type="image/x-icon">
     <link rel="stylesheet" href="mobile.style.css">
+    <style>
+        /* Estilo rápido para as Pokébolas na arena de batalha */
+        .container-pokebolas {
+            display: flex;
+            justify-content: center;
+            gap: 4px;
+            margin: 4px 0 8px 0;
+        }
+        .icone-pokebola-batalha {
+            font-size: 14px;
+            filter: drop-shadow(1px 1px 1px black);
+        }
+        .pokebola-ativa { opacity: 1; }
+        .pokebola-desmaiada { opacity: 0.3; filter: grayscale(100%); }
+    </style>
 </head>
 <body>
     <div class="logo">
@@ -62,6 +77,8 @@
         <div class="arena">
           <div class="combatente p1">
             <h3 id="batalha-nome-j1">Jogador 1</h3>
+            <!-- Indicador de Pokébolas J1 -->
+            <div id="pokebolas-j1" class="container-pokebolas"></div>
             <div style="position: relative; display: inline-block;">
                 <img id="batalha-img-pkm1" src="" alt="Pokemon J1">
             </div>
@@ -74,6 +91,8 @@
 
           <div class="combatente p2">
             <h3 id="batalha-nome-j2">Jogador 2</h3>
+            <!-- Indicador de Pokébolas J2 -->
+            <div id="pokebolas-j2" class="container-pokebolas"></div>
             <div style="position: relative; display: inline-block;">
                 <img id="batalha-img-pkm2" src="" alt="Pokemon J2">
             </div>
@@ -97,12 +116,10 @@
             <h2 style="font-size: 1.3rem; margin-bottom: 5px; color: #28a745;">🛍️ Loja de Itens Pós-Leilão</h2>
             <p style="font-size: 12px; color: #ccc; margin-bottom: 5px;">Gaste seu dinheiro restante para equipar seus Pokémon!</p>
             
-            <!-- Aviso Visual garantido sem alert -->
             <div id="mensagem-loja" style="color: #ffcb05; font-size: 12px; margin-bottom: 8px; min-height: 16px; font-weight: bold;"></div>
 
             <div id="saldo-loja-display" style="font-size: 14px; font-weight: bold; margin-bottom: 10px; color: #ffcb05;">Saldo: R$ <span id="valor-saldo-atual">0</span></div>
 
-            <!-- Lista de Itens Disponíveis para Compra (Apenas os 4 ativos e preços corretos) -->
             <div style="display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 15px; overflow-y: auto; max-height: 160px; text-align: left;">
                 
                 <div style="background: #333; padding: 8px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">

@@ -23,6 +23,37 @@ function calcularEfetividade(tipoAtacante, tipoDefensor) {
   return 1.0;
 }
 
+// Atualiza visualmente as Pokébolas na arena de batalha usando imagens reais e alinhamento horizontal (máx 3 por fileira)
+function atualizarIndicadorPokebolas(numJogador, timeLutadores, indiceAtual) {
+  const container = document.getElementById(`pokebolas-j${numJogador}`);
+  if (!container) return;
+
+  // Aplica estilos diretamente via JavaScript no container para ficar na horizontal e quebrar em blocos de 3
+  container.style.cssText = "display: flex; justify-content: center; flex-wrap: wrap; gap: 4px; margin: 4px auto; max-width: 70px;";
+
+  container.innerHTML = "";
+
+  const urlSpritePokebola = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png";
+
+  timeLutadores.forEach((pkm, index) => {
+    const imgBola = document.createElement('img');
+    imgBola.src = urlSpritePokebola;
+    
+    // Estilos inline diretamente na imagem da Pokébola
+    let estiloBase = "width: 18px; height: 18px; object-fit: contain; filter: drop-shadow(1px 1px 1px black); transition: opacity 0.3s ease;";
+    
+    if (index < indiceAtual || pkm.hp <= 0) {
+      imgBola.style.cssText = estiloBase + " opacity: 0.3; filter: grayscale(100%) drop-shadow(1px 1px 1px black);";
+      imgBola.title = `${pkm.nomeBase} (Desmaiado)`;
+    } else {
+      imgBola.style.cssText = estiloBase + " opacity: 1;";
+      imgBola.title = `${pkm.nomeBase} (Pronto)`;
+    }
+
+    container.appendChild(imgBola);
+  });
+}
+
 // Carrega os status de forma infalível, mapeando corretamente o Pinsir e preservando o estado de evolução.
 async function carregarStatusPokemon(pkmOriginal) {
   try {
@@ -48,7 +79,6 @@ async function carregarStatusPokemon(pkmOriginal) {
         const nomeApi = dados.name.toLowerCase().trim();
         let resMega = null;
 
-        // Lista robusta de tentativas direcionadas para abranger exceções (como o Pinsir)
         let urlsParaTestar = [
           `https://pokeapi.co/api/v2/pokemon/${nomeApi}-mega`,
           `https://pokeapi.co/api/v2/pokemon/${nomeApi}-mega-x`,
@@ -65,7 +95,6 @@ async function carregarStatusPokemon(pkmOriginal) {
           } catch (e) {}
         }
 
-        // Fallback dinâmico buscando direto nas variedades da espécie caso falhe a rota direta
         if (!resMega || !resMega.ok) {
           try {
             const resEspecie = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${pkmOriginal.id}`);
@@ -143,7 +172,6 @@ async function iniciarBatalhaAutomatica(time1, time2, nome1, nome2) {
 
   log.innerHTML = "<p>⚔️ Sincronizando equipes e carregando status na arena...</p>";
 
-  // Cria cópias totalmente independentes para os lutadores de cada equipe para evitar perda de estado entre turnos/pokémons
   let lutadores1 = JSON.parse(JSON.stringify(await Promise.all(time1.map(async p => await carregarStatusPokemon(p)))));
   let lutadores2 = JSON.parse(JSON.stringify(await Promise.all(time2.map(async p => await carregarStatusPokemon(p)))));
 
@@ -153,7 +181,10 @@ async function iniciarBatalhaAutomatica(time1, time2, nome1, nome2) {
     let p1 = lutadores1[i];
     let p2 = lutadores2[j];
 
-    // Restaura a imagem e nome corretos dependendo se ele já havia Mega Evoluído em uma rodada anterior (se aplicável)
+    // Atualiza o painel de Pokébolas no início de cada troca/combate
+    atualizarIndicadorPokebolas(1, lutadores1, i);
+    atualizarIndicadorPokebolas(2, lutadores2, j);
+
     document.getElementById('batalha-img-pkm1').src = p1.jaMegaEvoluiu ? p1.imagemMega : p1.imagemBase;
     document.getElementById('batalha-nome-pkm1').innerText = p1.jaMegaEvoluiu ? p1.nomeMega : p1.nomeBase;
     
@@ -213,6 +244,10 @@ async function iniciarBatalhaAutomatica(time1, time2, nome1, nome2) {
       log.innerHTML += `<p style="color: #ff4d4d;">☠️ O ${nomeExibicaoP2} de ${nome2} desmaiou!</p>`;
       j++;
     }
+
+    // Atualiza as Pokébolas após o nocaute
+    atualizarIndicadorPokebolas(1, lutadores1, i);
+    atualizarIndicadorPokebolas(2, lutadores2, j);
     log.scrollTop = log.scrollHeight;
   }
 
