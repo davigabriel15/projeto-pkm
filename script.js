@@ -183,7 +183,20 @@ function escutarAtualizacoesSala() {
     atualizarHTMLTime(1, dados.time1 || [], nomeJ1);
     atualizarHTMLTime(2, dados.time2 || [], nomeJ2);
 
-    if (dados.time1 && dados.time1.length >= 6 && dados.time2 && dados.time2.length >= 6) {
+    // ⭐ LÓGICA EXATA: Time 1 cheio + Saldo 2 zerado OU Time 2 cheio + Saldo 1 zerado (ou ambos cheios / ambos sem saldo) ⭐
+    const t1Len = dados.time1?.length || 0;
+    const t2Len = dados.time2?.length || 0;
+    const s1 = dados.saldoJ1 ?? saldoInicial;
+    const s2 = dados.saldoJ2 ?? saldoInicial;
+
+    const ambosCheios = (t1Len >= 6 && t2Len >= 6);
+    const ambosSemSaldo = (s1 <= 0 && s2 <= 0);
+    const time1CompletoESaldo2Zera = (t1Len >= 6 && s2 <= 0);
+    const time2CompletoESaldo1Zera = (t2Len >= 6 && s1 <= 0);
+
+    const fimLeilao = ambosCheios || ambosSemSaldo || time1CompletoESaldo2Zera || time2CompletoESaldo1Zera;
+
+    if (fimLeilao) {
       const time1Pronto = dados.time1ProntoParaBatalha || dados.time1Organizado || dados.time1;
       const time2Pronto = dados.time2ProntoParaBatalha || dados.time2Organizado || dados.time2;
 
@@ -491,8 +504,19 @@ function desistir() {
     leilaoAtual.quemDeuMaiorLance = null;
     limparTelaPokemon();
 
-    if (leilaoAtual.time1.length >= 6 && leilaoAtual.time2.length >= 6) {
-      exibirMensagem(`⚔️ Times completos! Abrindo painel de organização...`);
+    // Verificação exata local
+    const t1Len = leilaoAtual.time1.length;
+    const t2Len = leilaoAtual.time2.length;
+
+    const ambosCheiosL = (t1Len >= 6 && t2Len >= 6);
+    const ambosSemSaldoL = (saldo1 <= 0 && saldo2 <= 0);
+    const t1CheioS2Zera = (t1Len >= 6 && saldo2 <= 0);
+    const t2CheioS1Zera = (t2Len >= 6 && saldo1 <= 0);
+
+    const fimLocal = ambosCheiosL || ambosSemSaldoL || t1CheioS2Zera || t2CheioS1Zera;
+
+    if (fimLocal) {
+      exibirMensagem(`⚔️ Fim do leilão! Abrindo painel de organização...`);
       setTimeout(() => {
         abrirModalOrganizacao(leilaoAtual.time1, meuNome);
       }, 1500);
@@ -523,7 +547,17 @@ async function finalizarVenda(jogadorVencedor, valorFinal) {
 
     const nomeVencedor = jogadorVencedor === 1 ? dados.jogador1 : dados.jogador2;
 
-    if (time1.length >= 6 && time2.length >= 6) {
+    const t1Len = time1.length;
+    const t2Len = time2.length;
+
+    const ambosCheiosO = (t1Len >= 6 && t2Len >= 6);
+    const ambosSemSaldoO = (novoSaldoJ1 <= 0 && novoSaldoJ2 <= 0);
+    const t1CheioS2ZeraO = (t1Len >= 6 && novoSaldoJ2 <= 0);
+    const t2CheioS1ZeraO = (t2Len >= 6 && novoSaldoJ1 <= 0);
+
+    const fimOnline = ambosCheiosO || ambosSemSaldoO || t1CheioS2ZeraO || t2CheioS1ZeraO;
+
+    if (fimOnline) {
       salaRef.update({
         saldoJ1: novoSaldoJ1,
         saldoJ2: novoSaldoJ2,
@@ -534,7 +568,7 @@ async function finalizarVenda(jogadorVencedor, valorFinal) {
         pokemonAtual: null,
         lanceAtual: 0,
         quemDeuMaiorLance: null,
-        mensagem: `🎉 FIM DO LEILÃO! ${nomeVencedor} comprou ${pkmFinal.nome}! Times completos!`,
+        mensagem: `🎉 FIM DO LEILÃO! ${nomeVencedor} comprou ${pkmFinal.nome}! Iniciando organização!`,
         ultimaAtualizacao: Date.now()
       });
       return;
@@ -571,7 +605,7 @@ function abrirModalOrganizacao(timeOriginal, nomeJogador) {
     divModal.innerHTML = `
       <div style="background: #222; padding: 20px; border-radius: 12px; width: 100%; max-width: 450px; text-align: center; color: white; border: 2px solid #ffcb05; box-shadow: 0 0 20px rgba(255,203,5,0.5); display: flex; flex-direction: column; max-height: 90vh;">
         <h2 style="font-size: 1.2rem; margin-bottom: 8px;">🏆 Organizar Ordem de Batalha</h2>
-        <p style="font-size: 12px; color: #ccc; margin-bottom: 12px;">Use as setas para definir quem vai primeiro (1º) até o último (6º).</p>
+        <p style="font-size: 12px; color: #ccc; margin-bottom: 12px;">Use as setas para definir quem vai primeiro (1º) até o último.</p>
         
         <div id="lista-organizacao" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; overflow-y: auto; flex-grow: 1; padding-right: 5px;"></div>
         
@@ -675,14 +709,13 @@ let saldoAtualJogador = 0;
 let meuTimeLoja = [];
 let callbackFimDaLoja = null;
 
-// IDs oficiais de Pokémon que possuem Mega Evolução na PokéAPI (Ex: Mewtwo ID 150, Charizard ID 6, etc.)
 function podeUsarMegaStone(pokemonId) {
   const idsComMega = [3, 6, 9, 65, 94, 115, 130, 142, 150, 212, 214, 248, 257, 282, 306, 359, 376, 380, 381, 448, 460];
   return idsComMega.includes(Number(pokemonId));
 }
 
 function iniciarFluxoLoja(timeDoJogador, saldoRestante, callbackQuandoTerminar) {
-  meuTimeLoja = timeDoJogador.map(p => ({ ...p, itemEquipado: null }));
+  meuTimeLoja = timeDoJogador.map(p => ({ ...p, itemEquipado: p.itemEquipado || null }));
   saldoAtualJogador = saldoRestante;
   callbackFimDaLoja = callbackQuandoTerminar;
 
@@ -729,7 +762,6 @@ function equiparItemNoSlot(index) {
     return;
   }
 
-  // Validação restrita para Mega Stone (Ex: Mewtwo ID 150 e outros elegíveis)
   if (carrinhoItemSelecionado === 'Mega Stone' && !podeUsarMegaStone(meuTimeLoja[index].id)) {
     exibirMensagemLoja(`⚠️ ${meuTimeLoja[index].nome} não pode equipar uma Mega Stone!`);
     return;
@@ -737,8 +769,9 @@ function equiparItemNoSlot(index) {
 
   let precoItem = 0;
   if (carrinhoItemSelecionado === 'Sitrus Berry') precoItem = 15;
-  if (carrinhoItemSelecionado === 'Item de Velocidade') precoItem = 20;
-  if (carrinhoItemSelecionado === 'Mega Stone') precoItem = 30;
+  if (carrinhoItemSelecionado === 'Item de Velocidade') precoItem = 10;
+  if (carrinhoItemSelecionado === 'Mega Stone') precoItem = 20;
+  if (carrinhoItemSelecionado === 'Muscle Band') precoItem = 15;
 
   if (saldoAtualJogador < precoItem) {
     exibirMensagemLoja("⚠️ Saldo insuficiente para este item!");
