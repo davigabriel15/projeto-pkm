@@ -23,75 +23,102 @@ function calcularEfetividade(tipoAtacante, tipoDefensor) {
   return 1.0;
 }
 
-// IDs oficiais expandidos de Pokémon que possuem Mega Evolução na PokéAPI
-function podeUsarMegaStone(pokemonId) {
-  // Inclui Bulbasaur até Mewtwo + Pidgeot (18), Pinsir (127), Gyarados (130), Aerodactyl (142), etc.
-  const idsComMega = [
-    3, 6, 9, 15, 18, 65, 80, 94, 115, 127, 130, 142, 150, 
-    181, 208, 212, 214, 229, 248, 257, 282, 306, 310, 319, 
-    323, 334, 354, 359, 362, 376, 380, 381, 382, 383, 384, 448, 460
-  ];
-  return idsComMega.includes(Number(pokemonId));
-}
-
+// Carrega os status de forma infalível, mapeando corretamente o Pinsir e preservando o estado de evolução.
 async function carregarStatusPokemon(pkmOriginal) {
   try {
     const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${pkmOriginal.id}`);
     const dados = await res.json();
-    let tipos = dados.types.map(t => t.type.name);
+    let tiposBase = dados.types.map(t => t.type.name);
 
     let hpCalculado = dados.stats[0].base_stat * 2 + 50;
-    let ataqueCalculado = dados.stats[1].base_stat;
-    let defesaCalculada = dados.stats[2].base_stat;
-    let velocidadeCalculada = dados.stats[5].base_stat;
+    let ataqueBase = dados.stats[1].base_stat;
+    let defesaBase = dados.stats[2].base_stat;
+    let velocidadeBase = dados.stats[5].base_stat;
+
     let imagemFinal = pkmOriginal.imagem;
     let nomeFinal = pkmOriginal.nome;
-    let isMega = false;
+    let tiposMega = tiposBase;
+    let ataqueMega = ataqueBase;
+    let defesaMega = defesaBase;
+    let velocidadeMega = velocidadeBase;
+    let temCapacidadeMega = false;
 
-    // Se o jogador equipou a Mega Stone, testamos se o Pokémon realmente tem Mega na API
     if (pkmOriginal.itemEquipado === 'Mega Stone') {
       try {
-        // Tenta buscar o nome oficial da mega na PokéAPI (ex: bulbasaur-mega, pidgeot-mega, chesnaught-mega)
-        const nomeApi = dados.name.toLowerCase();
-        const resMega = await fetch(`https://pokeapi.co/api/v2/pokemon/${nomeApi}-mega`);
+        const nomeApi = dados.name.toLowerCase().trim();
+        let resMega = null;
+
+        // Lista robusta de tentativas direcionadas para abranger exceções (como o Pinsir)
+        let urlsParaTestar = [
+          `https://pokeapi.co/api/v2/pokemon/${nomeApi}-mega`,
+          `https://pokeapi.co/api/v2/pokemon/${nomeApi}-mega-x`,
+          `https://pokeapi.co/api/v2/pokemon/${nomeApi}-mega-y`
+        ];
+
+        for (let url of urlsParaTestar) {
+          try {
+            let tentativa = await fetch(url);
+            if (tentativa.ok) {
+              resMega = tentativa;
+              break;
+            }
+          } catch (e) {}
+        }
+
+        // Fallback dinâmico buscando direto nas variedades da espécie caso falhe a rota direta
+        if (!resMega || !resMega.ok) {
+          try {
+            const resEspecie = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${pkmOriginal.id}`);
+            if (resEspecie.ok) {
+              const dadosEspecie = await resEspecie.json();
+              const variedadeMega = dadosEspecie.varieties.find(v => v.pokemon.name.includes('mega'));
+              if (variedadeMega) {
+                let tentativaVariedade = await fetch(variedadeMega.pokemon.url);
+                if (tentativaVariedade.ok) {
+                  resMega = tentativaVariedade;
+                }
+              }
+            }
+          } catch (e) {}
+        }
         
-        if (resMega.ok) {
+        if (resMega && resMega.ok) {
           const dadosMega = await resMega.json();
-          imagemFinal = dadosMega.sprites.other['official-artwork'].front_default || imagemFinal;
-          tipos = dadosMega.types.map(t => t.type.name);
-          
-          ataqueCalculado = dadosMega.stats[1].base_stat;
-          defesaCalculada = dadosMega.stats[2].base_stat;
-          velocidadeCalculada = dadosMega.stats[5].base_stat;
-          
+          imagemFinal = dadosMega.sprites.other['official-artwork'].front_default || dadosMega.sprites.front_default || imagemFinal;
+          tiposMega = dadosMega.types.map(t => t.type.name);
+          ataqueMega = dadosMega.stats[1].base_stat;
+          defesaMega = dadosMega.stats[2].base_stat;
+          velocidadeMega = dadosMega.stats[5].base_stat;
           nomeFinal = `MEGA ${pkmOriginal.nome}`;
-          isMega = true;
-        } else {
-          // Se o Pokémon NÃO tem Mega oficial na API, o item é ignorado e ele não ganha status falsos/apelões!
-          isMega = false;
+          temCapacidadeMega = true;
         }
       } catch (err) {
-        isMega = false;
+        temCapacidadeMega = false;
       }
     }
 
     if (pkmOriginal.itemEquipado === 'Item de Velocidade') {
-      velocidadeCalculada = Math.floor(velocidadeCalculada * 1.2);
+      velocidadeBase = Math.floor(velocidadeBase * 1.2);
+      velocidadeMega = Math.floor(velocidadeMega * 1.2);
     }
 
     return {
       hp: hpCalculado,
       maxHp: hpCalculado,
-      ataque: ataqueCalculado,
-      defesa: defesaCalculada,
-      velocidade: velocidadeCalculada,
-      tipos: tipos,
-      imagem: imagemFinal,
+      ataque: ataqueBase,
+      defesa: defesaBase,
+      velocidade: velocidadeBase,
+      tipos: tiposBase,
+      ataqueMega: ataqueMega,
+      defesaMega: defesaMega,
+      velocidadeMega: velocidadeMega,
+      tiposMega: tiposMega,
       imagemBase: pkmOriginal.imagem,
       imagemMega: imagemFinal,        
-      nome: nomeFinal,
       nomeBase: pkmOriginal.nome,
-      isMega: isMega,
+      nomeMega: nomeFinal,
+      temCapacidadeMega: temCapacidadeMega,
+      jaMegaEvoluiu: false,
       itemEquipado: pkmOriginal.itemEquipado,
       frutaConsumida: false,
       id: pkmOriginal.id
@@ -99,9 +126,9 @@ async function carregarStatusPokemon(pkmOriginal) {
   } catch (e) {
     return { 
       hp: 150, maxHp: 150, ataque: 80, defesa: 70, velocidade: 80, 
-      tipos: ['normal'], imagem: pkmOriginal.imagem, imagemBase: pkmOriginal.imagem,
-      imagemMega: pkmOriginal.imagem, nome: pkmOriginal.nome, nomeBase: pkmOriginal.nome,
-      isMega: false, itemEquipado: pkmOriginal.itemEquipado, frutaConsumida: false, id: pkmOriginal.id
+      tipos: ['normal'], imagemBase: pkmOriginal.imagem, imagemMega: pkmOriginal.imagem,
+      nomeBase: pkmOriginal.nome, nomeMega: pkmOriginal.nome, temCapacidadeMega: false, 
+      jaMegaEvoluiu: false, itemEquipado: pkmOriginal.itemEquipado, frutaConsumida: false, id: pkmOriginal.id
     };
   }
 }
@@ -116,8 +143,9 @@ async function iniciarBatalhaAutomatica(time1, time2, nome1, nome2) {
 
   log.innerHTML = "<p>⚔️ Sincronizando equipes e carregando status na arena...</p>";
 
-  let lutadores1 = await Promise.all(time1.map(async p => await carregarStatusPokemon(p)));
-  let lutadores2 = await Promise.all(time2.map(async p => await carregarStatusPokemon(p)));
+  // Cria cópias totalmente independentes para os lutadores de cada equipe para evitar perda de estado entre turnos/pokémons
+  let lutadores1 = JSON.parse(JSON.stringify(await Promise.all(time1.map(async p => await carregarStatusPokemon(p)))));
+  let lutadores2 = JSON.parse(JSON.stringify(await Promise.all(time2.map(async p => await carregarStatusPokemon(p)))));
 
   let i = 0, j = 0;
 
@@ -125,23 +153,28 @@ async function iniciarBatalhaAutomatica(time1, time2, nome1, nome2) {
     let p1 = lutadores1[i];
     let p2 = lutadores2[j];
 
-    document.getElementById('batalha-img-pkm1').src = p1.imagemBase;
-    document.getElementById('batalha-nome-pkm1').innerText = p1.nomeBase;
-    document.getElementById('batalha-img-pkm2').src = p2.imagemBase;
-    document.getElementById('batalha-nome-pkm2').innerText = p2.nomeBase;
+    // Restaura a imagem e nome corretos dependendo se ele já havia Mega Evoluído em uma rodada anterior (se aplicável)
+    document.getElementById('batalha-img-pkm1').src = p1.jaMegaEvoluiu ? p1.imagemMega : p1.imagemBase;
+    document.getElementById('batalha-nome-pkm1').innerText = p1.jaMegaEvoluiu ? p1.nomeMega : p1.nomeBase;
+    
+    document.getElementById('batalha-img-pkm2').src = p2.jaMegaEvoluiu ? p2.imagemMega : p2.imagemBase;
+    document.getElementById('batalha-nome-pkm2').innerText = p2.jaMegaEvoluiu ? p2.nomeMega : p2.nomeBase;
 
     log.innerHTML += `<hr style="border: 0; border-top: 1px solid #444; margin: 8px 0;">`;
-    log.innerHTML += `<p style="color: #ffcb05;"><strong>Entram na arena:</strong> ${p1.nomeBase} vs ${p2.nomeBase}!</p>`;
+    log.innerHTML += `<p style="color: #ffcb05;"><strong>Entram na arena:</strong> ${p1.jaMegaEvoluiu ? p1.nomeMega : p1.nomeBase} vs ${p2.jaMegaEvoluiu ? p2.nomeMega : p2.nomeBase}!</p>`;
     log.scrollTop = log.scrollHeight;
 
     atualizarBarrasHP(p1, p2);
 
-    if (p1.isMega || p2.isMega) {
-      await new Promise(r => setTimeout(r, 1200));
-      
-      if (p1.isMega) await dispararAnimacaoMega(1, p1, log);
-      if (p2.isMega) await dispararAnimacaoMega(2, p2, log);
-      
+    if ((p1.temCapacidadeMega && !p1.jaMegaEvoluiu) || (p2.temCapacidadeMega && !p2.jaMegaEvoluiu)) {
+      await new Promise(r => setTimeout(r, 1500));
+
+      if (p1.temCapacidadeMega && !p1.jaMegaEvoluiu) {
+        await dispararAnimacaoMega(1, p1, log);
+      }
+      if (p2.temCapacidadeMega && !p2.jaMegaEvoluiu) {
+        await dispararAnimacaoMega(2, p2, log);
+      }
       log.scrollTop = log.scrollHeight;
     }
 
@@ -154,6 +187,7 @@ async function iniciarBatalhaAutomatica(time1, time2, nome1, nome2) {
       let numeroDefensorPrimeiro = primeiro === p1 ? 1 : 2;
 
       executarAtaqueTurno(primeiro, segundo, numeroDefensorSegundo, log);
+      aplicarEfeitosPassivosTurno(segundo, numeroDefensorSegundo, log);
       verificarEUsarFruta(segundo, numeroDefensorSegundo, log);
       atualizarBarrasHP(p1, p2);
 
@@ -162,6 +196,7 @@ async function iniciarBatalhaAutomatica(time1, time2, nome1, nome2) {
       await new Promise(r => setTimeout(r, 600));
 
       executarAtaqueTurno(segundo, primeiro, numeroDefensorPrimeiro, log);
+      aplicarEfeitosPassivosTurno(primeiro, numeroDefensorPrimeiro, log);
       verificarEUsarFruta(primeiro, numeroDefensorPrimeiro, log);
       atualizarBarrasHP(p1, p2);
 
@@ -169,11 +204,13 @@ async function iniciarBatalhaAutomatica(time1, time2, nome1, nome2) {
     }
 
     if (p1.hp <= 0) {
-      log.innerHTML += `<p style="color: #ff4d4d;">☠️ O ${p1.isMega ? p1.nome : p1.nomeBase} de ${nome1} desmaiou!</p>`;
+      let nomeExibicaoP1 = p1.jaMegaEvoluiu ? p1.nomeMega : p1.nomeBase;
+      log.innerHTML += `<p style="color: #ff4d4d;">☠️ O ${nomeExibicaoP1} de ${nome1} desmaiou!</p>`;
       i++;
     }
     if (p2.hp <= 0) {
-      log.innerHTML += `<p style="color: #ff4d4d;">☠️ O ${p2.isMega ? p2.nome : p2.nomeBase} de ${nome2} desmaiou!</p>`;
+      let nomeExibicaoP2 = p2.jaMegaEvoluiu ? p2.nomeMega : p2.nomeBase;
+      log.innerHTML += `<p style="color: #ff4d4d;">☠️ O ${nomeExibicaoP2} de ${nome2} desmaiou!</p>`;
       j++;
     }
     log.scrollTop = log.scrollHeight;
@@ -197,14 +234,30 @@ async function dispararAnimacaoMega(numCombatente, pkmObj, logElemento) {
     imgElem.style.transform = "scale(1.3)";
     imgElem.style.filter = "brightness(2.5) drop-shadow(0 0 22px gold)";
     
+    if (imgElem.parentElement) {
+      const simboloMega = document.createElement('div');
+      simboloMega.innerHTML = "🧬 <strong>MEGA!</strong>";
+      simboloMega.style.cssText = "position: absolute; top: -25px; left: 50%; transform: translateX(-50%); color: #ffcb05; font-weight: bold; font-size: 18px; text-shadow: 2px 2px 4px black; z-index: 100; animation: fadeInOut 1.2s ease;";
+      imgElem.parentElement.style.position = "relative";
+      imgElem.parentElement.appendChild(simboloMega);
+      setTimeout(() => simboloMega.remove(), 1200);
+    }
+
     await new Promise(r => setTimeout(r, 400));
     
     imgElem.src = pkmObj.imagemMega;
-    if (nomeElem) nomeElem.innerText = pkmObj.nome;
+    if (nomeElem) nomeElem.innerText = pkmObj.nomeMega;
 
     imgElem.style.transform = "scale(1)";
     imgElem.style.filter = "none";
   }
+
+  pkmObj.ataque = pkmObj.ataqueMega;
+  pkmObj.defesa = pkmObj.defesaMega;
+  pkmObj.velocidade = pkmObj.velocidadeMega;
+  pkmObj.tipos = pkmObj.tiposMega;
+  pkmObj.jaMegaEvoluiu = true;
+
   logElemento.innerHTML += `<p style="color: #ffcb05;">✨ ${pkmObj.nomeBase} reagiu à Mega Stone e Mega Evoluiu!</p>`;
 }
 
@@ -214,7 +267,8 @@ function verificarEUsarFruta(combatente, numCombatente, logElemento) {
       combatente.frutaConsumida = true;
       combatente.hp = Math.min(combatente.maxHp, combatente.hp + 50);
 
-      logElemento.innerHTML += `<p style="color: #4caf50;">🍑 ${combatente.isMega ? combatente.nome : combatente.nomeBase} comeu a Sitrus Berry e recuperou 50 HP!</p>`;
+      let nomeExibicao = combatente.jaMegaEvoluiu ? combatente.nomeMega : combatente.nomeBase;
+      logElemento.innerHTML += `<p style="color: #4caf50;">🍑 ${nomeExibicao} comeu a Sitrus Berry e recuperou 50 HP!</p>`;
 
       const imgElem = document.getElementById(`batalha-img-pkm${numCombatente}`);
       if (imgElem && imgElem.parentElement) {
@@ -228,14 +282,26 @@ function verificarEUsarFruta(combatente, numCombatente, logElemento) {
   }
 }
 
+function aplicarEfeitosPassivosTurno(combatente, numCombatente, logElemento) {
+  if (combatente.itemEquipado === 'Leftovers' && combatente.hp > 0 && combatente.hp < combatente.maxHp) {
+    let cura = Math.floor(combatente.maxHp * 0.10);
+    combatente.hp = Math.min(combatente.maxHp, combatente.hp + cura);
+    let nomeExibicao = combatente.jaMegaEvoluiu ? combatente.nomeMega : combatente.nomeBase;
+    logElemento.innerHTML += `<p style="color: #4caf50;">🛡️ ${nomeExibicao} recuperou ${cura} HP graças às Leftovers!</p>`;
+  }
+}
+
 function executarAtaqueTurno(atacante, defensor, numeroDefensor, logElemento) {
   let danoBase = Math.max(12, Math.floor(atacante.ataque * 0.55 - defensor.defesa * 0.2));
+
+  if (atacante.itemEquipado === 'Muscle Band') {
+    danoBase = Math.floor(danoBase * 1.15);
+  }
 
   let multiplicadorTipo = 1.0;
   let teveImunidade = false;
   let ehImunidadeMutua = false;
 
-  // Verificação de Interação Normal vs. Fantasma (Dano Fixo 10 e mensagem na situação)
   const tiposAtacante = atacante.tipos ? atacante.tipos.map(t => t.toLowerCase()) : [];
   const tiposDefensor = defensor.tipos ? defensor.tipos.map(t => t.toLowerCase()) : [];
 
@@ -253,9 +319,11 @@ function executarAtaqueTurno(atacante, defensor, numeroDefensor, logElemento) {
     defensor.hp -= danoFinal;
     if (defensor.hp < 0) defensor.hp = 0;
 
-    const mensagemSituacao = `⚠️ Interação de Tipos: ${atacante.isMega ? atacante.nome : atacante.nomeBase} e ${defensor.isMega ? defensor.nome : defensor.nomeBase} possuem imunidades cruzadas! O golpe causa 10 de dano fixo.`;
+    let nomeAtv = atacante.jaMegaEvoluiu ? atacante.nomeMega : atacante.nomeBase;
+    let nomeDef = defensor.jaMegaEvoluiu ? defensor.nomeMega : defensor.nomeBase;
+
+    const mensagemSituacao = `⚠️ Interação de Tipos: ${nomeAtv} e ${nomeDef} possuem imunidades cruzadas! O golpe causa 10 de dano fixo.`;
     
-    // Atualiza a box de situação da tela
     const divSituacao = document.querySelector('.situacao') || document.getElementById('mensagem-batalha');
     if (divSituacao) divSituacao.innerHTML = `<p>${mensagemSituacao}</p>`;
 
@@ -265,13 +333,10 @@ function executarAtaqueTurno(atacante, defensor, numeroDefensor, logElemento) {
       setTimeout(() => imagemDefensor.classList.remove('efeito-tremer'), 400);
     }
 
-    let nomeAtv = atacante.isMega ? atacante.nome : atacante.nomeBase;
-    let nomeDef = defensor.isMega ? defensor.nome : defensor.nomeBase;
     logElemento.innerHTML += `<p>💥 <strong>${nomeAtv}</strong> atacou ${nomeDef} causando 10 de dano fixo <span style='color: #ff9800;'>(Imunidade cruzada!)</span></p>`;
     return;
   }
 
-  // Lógica normal de tipos padrão
   if (atacante.tipos && atacante.tipos.length > 0 && defensor.tipos) {
     let melhorEfetividade = 1.0;
 
@@ -315,8 +380,8 @@ function executarAtaqueTurno(atacante, defensor, numeroDefensor, logElemento) {
     }, 400);
   }
 
-  let nomeAtacanteExibicao = atacante.isMega ? atacante.nome : atacante.nomeBase;
-  let nomeDefensorExibicao = defensor.isMega ? defensor.nome : defensor.nomeBase;
+  let nomeAtacanteExibicao = atacante.jaMegaEvoluiu ? atacante.nomeMega : atacante.nomeBase;
+  let nomeDefensorExibicao = defensor.jaMegaEvoluiu ? defensor.nomeMega : defensor.nomeBase;
 
   logElemento.innerHTML += `<p>💥 <strong>${nomeAtacanteExibicao}</strong> atacou ${nomeDefensorExibicao} causando ${danoFinal} de dano!${textoExtra}</p>`;
 }

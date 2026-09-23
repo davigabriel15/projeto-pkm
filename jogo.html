@@ -102,20 +102,29 @@
 
             <div id="saldo-loja-display" style="font-size: 14px; font-weight: bold; margin-bottom: 10px; color: #ffcb05;">Saldo: R$ <span id="valor-saldo-atual">0</span></div>
 
-            <!-- Lista de Itens Disponíveis para Compra -->
-            <div style="display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 15px; overflow-y: auto; max-height: 140px; text-align: left;">
+            <!-- Lista de Itens Disponíveis para Compra (Apenas os 4 ativos e preços corretos) -->
+            <div style="display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 15px; overflow-y: auto; max-height: 160px; text-align: left;">
+                
                 <div style="background: #333; padding: 8px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
-                    <div><strong>Sitrus Berry</strong> (Cura 50 HP quando baixar da metade) - <span style="color:#28a745;">R$ 15</span></div>
+                    <div><strong>Mega Stone</strong> (Mega Evolução + Status) - <span style="color:#28a745;">R$ 20</span></div>
+                    <button onclick="comprarItem('Mega Stone', 20)" style="background: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Comprar</button>
+                </div>
+
+                <div style="background: #333; padding: 8px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
+                    <div><strong>Item de Velocidade</strong> (+20% Velocidade) - <span style="color:#28a745;">R$ 10</span></div>
+                    <button onclick="comprarItem('Item de Velocidade', 10)" style="background: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Comprar</button>
+                </div>
+
+                <div style="background: #333; padding: 8px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
+                    <div><strong>Sitrus Berry</strong> (Cura 50 HP na metade) - <span style="color:#28a745;">R$ 15</span></div>
                     <button onclick="comprarItem('Sitrus Berry', 15)" style="background: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Comprar</button>
                 </div>
+
                 <div style="background: #333; padding: 8px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
-                    <div><strong>Item de Velocidade</strong> (+20% na Velocidade) - <span style="color:#28a745;">R$ 20</span></div>
-                    <button onclick="comprarItem('Item de Velocidade', 20)" style="background: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Comprar</button>
+                    <div><strong>Muscle Band</strong> (+15% de Dano de Ataque) - <span style="color:#28a745;">R$ 15</span></div>
+                    <button onclick="comprarItem('Muscle Band', 15)" style="background: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Comprar</button>
                 </div>
-                <div style="background: #333; padding: 8px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
-                    <div><strong>Mega Stone</strong> (Mega Evolução + Status Otimizados) - <span style="color:#28a745;">R$ 30</span></div>
-                    <button onclick="comprarItem('Mega Stone', 30)" style="background: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Comprar</button>
-                </div>
+
             </div>
 
             <h3 style="font-size: 1rem; margin-bottom: 5px; text-align: left;">Selecione o Pokémon para equipar o item comprado:</h3>
