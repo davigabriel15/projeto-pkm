@@ -267,27 +267,37 @@ async function dispararAnimacaoMega(numCombatente, pkmObj, logElemento) {
   const imgElem = document.getElementById(`batalha-img-pkm${numCombatente}`);
   const nomeElem = document.getElementById(`batalha-nome-pkm${numCombatente}`);
 
-  if (imgElem) {
+  if (imgElem && imgElem.parentElement) {
+    imgElem.parentElement.style.position = "relative";
+
+    // Cria a imagem PNG flutuante do símbolo da Mega Evolução
+    const iconeMegaPng = document.createElement('img');
+    iconeMegaPng.src = "imagens/mega_simbolo.png"; 
+    iconeMegaPng.style.cssText = "position: absolute; top: -35px; left: 50%; transform: translateX(-50%) scale(0); width: 100px; height: 100px; object-fit: contain; filter: drop-shadow(0 0 8px gold); z-index: 100; transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s ease;";
+    
+    imgElem.parentElement.appendChild(iconeMegaPng);
+
+    setTimeout(() => {
+      iconeMegaPng.style.transform = "translateX(-50%) scale(1.2)";
+    }, 50);
+
     imgElem.style.transition = "transform 0.4s ease, filter 0.4s ease";
     imgElem.style.transform = "scale(1.3)";
-    imgElem.style.filter = "brightness(2.5) drop-shadow(0 0 22px gold)";
+    imgElem.style.filter = "brightness(2.5) drop-shadow(0 0 25px gold)";
 
-    if (imgElem.parentElement) {
-      const simboloMega = document.createElement('div');
-      simboloMega.innerHTML = "🧬 <strong>MEGA!</strong>";
-      simboloMega.style.cssText = "position: absolute; top: -25px; left: 50%; transform: translateX(-50%); color: #ffcb05; font-weight: bold; font-size: 18px; text-shadow: 2px 2px 4px black; z-index: 100; animation: fadeInOut 1.2s ease;";
-      imgElem.parentElement.style.position = "relative";
-      imgElem.parentElement.appendChild(simboloMega);
-      setTimeout(() => simboloMega.remove(), 1200);
-    }
-
-    await new Promise(r => setTimeout(r, 400));
+    await new Promise(r => setTimeout(r, 500));
 
     imgElem.src = pkmObj.imagemMega;
     if (nomeElem) nomeElem.innerText = pkmObj.nomeMega;
 
     imgElem.style.transform = "scale(1)";
     imgElem.style.filter = "none";
+
+    setTimeout(() => {
+      iconeMegaPng.style.transform = "translateX(-50%) scale(0)";
+      iconeMegaPng.style.opacity = "0";
+      setTimeout(() => iconeMegaPng.remove(), 400);
+    }, 1000);
   }
 
   pkmObj.ataque = pkmObj.ataqueMega;
