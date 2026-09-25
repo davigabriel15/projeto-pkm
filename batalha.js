@@ -12,7 +12,15 @@ const tabelaVantagens = {
   ice: { fire: 0.5, water: 0.5, grass: 2.0, ice: 0.5, ground: 2.0, flying: 2.0, dragon: 2.0, steel: 0.5 },
   dragon: { dragon: 2.0, steel: 0.5, fairy: 0.0 },
   ghost: { normal: 0.0, psychic: 2.0, ghost: 2.0, dark: 0.5 },
-  fighting: { normal: 2.0, ice: 2.0, poison: 0.5, flying: 0.5, psychic: 0.5, bug: 0.5, rock: 2.0, ghost: 0.0, dark: 2.0, steel: 2.0, fairy: 0.5 }
+  fighting: { normal: 2.0, ice: 2.0, poison: 0.5, flying: 0.5, psychic: 0.5, bug: 0.5, rock: 2.0, ghost: 0.0, dark: 2.0, steel: 2.0, fairy: 0.5 },
+  poison: { grass: 2.0, fairy: 2.0, poison: 0.5, ground: 0.5, rock: 0.5, ghost: 0.5, steel: 0.0 },
+  ground: { fire: 2.0, electric: 2.0, poison: 2.0, rock: 2.0, steel: 2.0, grass: 0.5, bug: 0.5, flying: 0.0 },
+  flying: { grass: 2.0, fighting: 2.0, bug: 2.0, electric: 0.5, rock: 0.5, steel: 0.5 },
+  bug: { grass: 2.0, psychic: 2.0, dark: 2.0, fire: 0.5, fighting: 0.5, poison: 0.5, flying: 0.5, ghost: 0.5, steel: 0.5, fairy: 0.5 },
+  rock: { fire: 2.0, ice: 2.0, flying: 2.0, bug: 2.0, fighting: 0.5, ground: 0.5, steel: 0.5 },
+  steel: { ice: 2.0, rock: 2.0, fairy: 2.0, fire: 0.5, water: 0.5, electric: 0.5, steel: 0.5 },
+  fairy: { fighting: 2.0, dragon: 2.0, dark: 2.0, fire: 0.5, poison: 0.5, steel: 0.5 },
+  dark: { psychic: 2.0, ghost: 2.0, fighting: 0.5, dark: 0.5, fairy: 0.5 }
 };
 
 function calcularEfetividade(tipoAtacante, tipoDefensor) {
@@ -28,9 +36,7 @@ function atualizarIndicadorPokebolas(numJogador, timeLutadores, indiceAtual) {
   const container = document.getElementById(`pokebolas-j${numJogador}`);
   if (!container) return;
 
-  // Aplica estilos diretamente via JavaScript no container para ficar na horizontal e quebrar em blocos de 3
   container.style.cssText = "display: flex; justify-content: center; flex-wrap: wrap; gap: 4px; margin: 4px auto; max-width: 70px;";
-
   container.innerHTML = "";
 
   const urlSpritePokebola = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png";
@@ -39,7 +45,6 @@ function atualizarIndicadorPokebolas(numJogador, timeLutadores, indiceAtual) {
     const imgBola = document.createElement('img');
     imgBola.src = urlSpritePokebola;
     
-    // Estilos inline diretamente na imagem da Pokébola
     let estiloBase = "width: 18px; height: 18px; object-fit: contain; filter: drop-shadow(1px 1px 1px black); transition: opacity 0.3s ease;";
     
     if (index < indiceAtual || pkm.hp <= 0) {
@@ -54,7 +59,7 @@ function atualizarIndicadorPokebolas(numJogador, timeLutadores, indiceAtual) {
   });
 }
 
-// Carrega os status de forma infalível, mapeando corretamente o Pinsir e preservando o estado de evolução.
+// Carrega os status de forma infalível, mapeando corretamente e preservando o estado de evolução (suporta múltiplas megas).
 async function carregarStatusPokemon(pkmOriginal) {
   try {
     const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${pkmOriginal.id}`);
@@ -181,7 +186,6 @@ async function iniciarBatalhaAutomatica(time1, time2, nome1, nome2) {
     let p1 = lutadores1[i];
     let p2 = lutadores2[j];
 
-    // Atualiza o painel de Pokébolas no início de cada troca/combate
     atualizarIndicadorPokebolas(1, lutadores1, i);
     atualizarIndicadorPokebolas(2, lutadores2, j);
 
@@ -245,7 +249,6 @@ async function iniciarBatalhaAutomatica(time1, time2, nome1, nome2) {
       j++;
     }
 
-    // Atualiza as Pokébolas após o nocaute
     atualizarIndicadorPokebolas(1, lutadores1, i);
     atualizarIndicadorPokebolas(2, lutadores2, j);
     log.scrollTop = log.scrollHeight;
@@ -263,12 +266,12 @@ async function iniciarBatalhaAutomatica(time1, time2, nome1, nome2) {
 async function dispararAnimacaoMega(numCombatente, pkmObj, logElemento) {
   const imgElem = document.getElementById(`batalha-img-pkm${numCombatente}`);
   const nomeElem = document.getElementById(`batalha-nome-pkm${numCombatente}`);
-  
+
   if (imgElem) {
     imgElem.style.transition = "transform 0.4s ease, filter 0.4s ease";
     imgElem.style.transform = "scale(1.3)";
     imgElem.style.filter = "brightness(2.5) drop-shadow(0 0 22px gold)";
-    
+
     if (imgElem.parentElement) {
       const simboloMega = document.createElement('div');
       simboloMega.innerHTML = "🧬 <strong>MEGA!</strong>";
@@ -279,7 +282,7 @@ async function dispararAnimacaoMega(numCombatente, pkmObj, logElemento) {
     }
 
     await new Promise(r => setTimeout(r, 400));
-    
+
     imgElem.src = pkmObj.imagemMega;
     if (nomeElem) nomeElem.innerText = pkmObj.nomeMega;
 
@@ -326,6 +329,7 @@ function aplicarEfeitosPassivosTurno(combatente, numCombatente, logElemento) {
   }
 }
 
+// Executa o ataque com inteligência de tipagem dupla (avalia todos os tipos do atacante e escolhe o melhor)
 function executarAtaqueTurno(atacante, defensor, numeroDefensor, logElemento) {
   let danoBase = Math.max(12, Math.floor(atacante.ataque * 0.55 - defensor.defesa * 0.2));
 
@@ -333,12 +337,8 @@ function executarAtaqueTurno(atacante, defensor, numeroDefensor, logElemento) {
     danoBase = Math.floor(danoBase * 1.15);
   }
 
-  let multiplicadorTipo = 1.0;
-  let teveImunidade = false;
-  let ehImunidadeMutua = false;
-
-  const tiposAtacante = atacante.tipos ? atacante.tipos.map(t => t.toLowerCase()) : [];
-  const tiposDefensor = defensor.tipos ? defensor.tipos.map(t => t.toLowerCase()) : [];
+  const tiposAtacante = atacante.tipos ? atacante.tipos.map(t => t.toLowerCase()) : ['normal'];
+  const tiposDefensor = defensor.tipos ? defensor.tipos.map(t => t.toLowerCase()) : ['normal'];
 
   const atacanteTemNormal = tiposAtacante.includes('normal');
   const defensorTemFantasma = tiposDefensor.includes('ghost');
@@ -346,10 +346,6 @@ function executarAtaqueTurno(atacante, defensor, numeroDefensor, logElemento) {
   const defensorTemNormal = tiposDefensor.includes('normal');
 
   if ((atacanteTemNormal && defensorTemFantasma) || (atacanteTemFantasma && defensorTemNormal)) {
-    ehImunidadeMutua = true;
-  }
-
-  if (ehImunidadeMutua) {
     let danoFinal = 10;
     defensor.hp -= danoFinal;
     if (defensor.hp < 0) defensor.hp = 0;
@@ -357,50 +353,55 @@ function executarAtaqueTurno(atacante, defensor, numeroDefensor, logElemento) {
     let nomeAtv = atacante.jaMegaEvoluiu ? atacante.nomeMega : atacante.nomeBase;
     let nomeDef = defensor.jaMegaEvoluiu ? defensor.nomeMega : defensor.nomeBase;
 
-    const mensagemSituacao = `⚠️ Interação de Tipos: ${nomeAtv} e ${nomeDef} possuem imunidades cruzadas! O golpe causa 10 de dano fixo.`;
-    
-    const divSituacao = document.querySelector('.situacao') || document.getElementById('mensagem-batalha');
-    if (divSituacao) divSituacao.innerHTML = `<p>${mensagemSituacao}</p>`;
-
-    const imagemDefensor = document.getElementById(`batalha-img-pkm${numeroDefensor}`);
-    if (imagemDefensor) {
-      imagemDefensor.classList.add('efeito-tremer');
-      setTimeout(() => imagemDefensor.classList.remove('efeito-tremer'), 400);
-    }
-
     logElemento.innerHTML += `<p>💥 <strong>${nomeAtv}</strong> atacou ${nomeDef} causando 10 de dano fixo <span style='color: #ff9800;'>(Imunidade cruzada!)</span></p>`;
     return;
   }
 
-  if (atacante.tipos && atacante.tipos.length > 0 && defensor.tipos) {
-    let melhorEfetividade = 1.0;
+  let melhorTipoAtacker = tiposAtacante[0];
+  let melhorMultiplicador = -1;
+  let teveImunidadeWithMelhor = false;
 
-    for (let tAtk of atacante.tipos) {
-      for (let tDef of defensor.tipos) {
-        let ef = calcularEfetividade(tAtk, tDef);
-        if (ef === 0.0) {
-          teveImunidade = true;
-        } else if (ef > melhorEfetividade) {
-          melhorEfetividade = ef;
-        }
+  for (let tAtk of tiposAtacante) {
+    let efParcial = 1.0;
+    let imuneParcial = false;
+
+    for (let tDef of tiposDefensor) {
+      let ef = calcularEfetividade(tAtk, tDef);
+      if (ef === 0.0) {
+        imuneParcial = true;
       }
+      efParcial *= ef;
     }
-    multiplicadorTipo = teveImunidade ? 0.0 : melhorEfetividade;
+
+    if (!imuneParcial && efParcial > melhorMultiplicador) {
+      melhorMultiplicador = efParcial;
+      melhorTipoAtacker = tAtk;
+      teveImunidadeWithMelhor = false;
+    } else if (melhorMultiplicador === -1) {
+      melhorMultiplicador = efParcial;
+      melhorTipoAtacker = tAtk;
+      teveImunidadeWithMelhor = imuneParcial;
+    }
   }
+
+  let multiplicadorTipo = melhorMultiplicador >= 0 ? melhorMultiplicador : 1.0;
+  let teveImunidade = teveImunidadeWithMelhor;
 
   let danoFinal = Math.floor(danoBase * multiplicadorTipo);
   let textoExtra = "";
 
-  if (teveImunidade) {
+  if (teveImunidade || multiplicadorTipo === 0.0) {
     danoFinal = 1;
-    textoExtra = " <span style='color: gray;'>(Imunidade de tipo! Causou 1 de dano)</span>";
+    textoExtra = " <span style='color: gray;'>(Imunidade de tipo! Usou a melhor tipagem disponível e causou 1 de dano)</span>";
   } else {
     if (danoFinal < 1) danoFinal = 1;
 
     if (multiplicadorTipo > 1.0) {
-      textoExtra = " <span style='color: #4caf50;'>(Foi Super Efetivo!)</span>";
+      textoExtra = ` <span style='color: #4caf50;'>(Usou ${melhorTipoAtacker} - Super Efetivo!)</span>`;
     } else if (multiplicadorTipo < 1.0) {
-      textoExtra = " <span style='color: #ff9800;'>(Não foi muito efetivo...)</span>";
+      textoExtra = ` <span style='color: #ff9800;'>(Usou ${melhorTipoAtacker} - Não foi muito efetivo...)</span>`;
+    } else {
+      textoExtra = ` <span style='color: #ccc;'>(Usou ${melhorTipoAtacker})</span>`;
     }
   }
 

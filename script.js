@@ -183,7 +183,6 @@ function escutarAtualizacoesSala() {
     atualizarHTMLTime(1, dados.time1 || [], nomeJ1);
     atualizarHTMLTime(2, dados.time2 || [], nomeJ2);
 
-    // ⭐ LÓGICA EXATA: Time 1 cheio + Saldo 2 zerado OU Time 2 cheio + Saldo 1 zerado (ou ambos cheios / ambos sem saldo) ⭐
     const t1Len = dados.time1?.length || 0;
     const t2Len = dados.time2?.length || 0;
     const s1 = dados.saldoJ1 ?? saldoInicial;
@@ -504,7 +503,6 @@ function desistir() {
     leilaoAtual.quemDeuMaiorLance = null;
     limparTelaPokemon();
 
-    // Verificação exata local
     const t1Len = leilaoAtual.time1.length;
     const t2Len = leilaoAtual.time2.length;
 
@@ -709,9 +707,19 @@ let saldoAtualJogador = 0;
 let meuTimeLoja = [];
 let callbackFimDaLoja = null;
 
-function podeUsarMegaStone(pokemonId) {
-  const idsComMega = [3, 6, 9, 65, 94, 115, 130, 142, 150, 212, 214, 248, 257, 282, 306, 359, 376, 380, 381, 448, 460];
-  return idsComMega.includes(Number(pokemonId));
+// Função Universal baseada na PokéAPI para verificar Mega Evolução (substitui a lista fixa antiga)
+async function podeUsarMegaStoneUniversal(pokemonId) {
+  try {
+    const resEspecie = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${pokemonId}/`);
+    if (!resEspecie.ok) return false;
+    
+    const dadosEspecie = await resEspecie.json();
+    const temMega = dadosEspecie.varieties && dadosEspecie.varieties.some(v => v.pokemon.name.includes('mega'));
+    return temMega;
+  } catch (e) {
+    console.warn("Erro ao verificar capacidade Mega na loja:", e);
+    return false;
+  }
 }
 
 function iniciarFluxoLoja(timeDoJogador, saldoRestante, callbackQuandoTerminar) {
@@ -756,15 +764,21 @@ function comprarItem(nomeItem, preco) {
   exibirMensagemLoja(`✅ Você selecionou ${nomeItem}! Agora clique em "Equipar" no Pokémon correspondente.`);
 }
 
-function equiparItemNoSlot(index) {
+async function equiparItemNoSlot(index) {
   if (!carrinhoItemSelecionado) {
     exibirMensagemLoja("⚠️ Escolha um item na loja primeiro clicando em 'Comprar'!");
     return;
   }
 
-  if (carrinhoItemSelecionado === 'Mega Stone' && !podeUsarMegaStone(meuTimeLoja[index].id)) {
-    exibirMensagemLoja(`⚠️ ${meuTimeLoja[index].nome} não pode equipar uma Mega Stone!`);
-    return;
+  // Se o item for a Mega Stone, faz a verificação assíncrona universal via API
+  if (carrinhoItemSelecionado === 'Mega Stone') {
+    const pkmAlvo = meuTimeLoja[index];
+    const aceitaMega = await podeUsarMegaStoneUniversal(pkmAlvo.id);
+    
+    if (!aceitaMega) {
+      exibirMensagemLoja(`⚠️ ${pkmAlvo.nome} não possui Mega Evolução oficial na PokéAPI!`);
+      return;
+    }
   }
 
   let precoItem = 0;
