@@ -335,3 +335,11 @@ body {
   display: block;
   margin-top: auto; /* Empurra o preço/botão sempre para a base do card */
 }
+@media screen and (min-width: 360px) {
+    body{
+        background-image: url(imagens/fundo-jogo-pc.jpg);
+        background-size: cover;
+        background-position: bottom left;
+    }
+    
+}

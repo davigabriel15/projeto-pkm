@@ -114,3 +114,10 @@ body {
         max-width: 140px;
     }
 }
+@media screen and (min-width: 360px) {
+    body{
+        background-image: url(imagens/fundo-menu-pc.jpg);
+        background-size: cover;
+    background-position: ;    }
+    
+}
