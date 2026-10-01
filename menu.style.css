@@ -116,7 +116,7 @@ body {
 }
 @media screen and (min-width: 360px) {
     body{
-        background-image: url(imagens/fundo-menu-pc.jpg);
+        background-image: url(imagens/fundo_gengar3.png);
         background-size: cover;
     }
     

@@ -337,7 +337,7 @@ body {
 }
 @media screen and (min-width: 360px) {
     body{
-        background-image: url(imagens/fundo-jogo-pc.jpg);
+        background-image: url(imagens/fundo_rayquaza.png);
         background-size: cover;
         background-position: bottom left;
     }
