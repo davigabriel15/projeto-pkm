@@ -125,7 +125,7 @@ body {
 #btn-info {
     position: fixed;
     top: 15px;
-    left: 20px;
+    right: 20px;
     background: rgba(20, 24, 33, 0.9);
     color: #ffcb05;
     border: 2px solid #ffcb05;
@@ -162,6 +162,7 @@ body {
     align-items: center;
     padding: 15px;
     box-sizing: border-box;
+    overflow-y: scroll;
 }
 
 /* Caixa de Conteúdo do Modal */
