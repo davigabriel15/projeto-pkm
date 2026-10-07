@@ -121,3 +121,99 @@ body {
     }
     
 }
+/* Botão de Informações Fixo/Discreto */
+#btn-info {
+    position: fixed;
+    top: 15px;
+    left: 20px;
+    background: rgba(20, 24, 33, 0.9);
+    color: #ffcb05;
+    border: 2px solid #ffcb05;
+    font-size: 1.2rem;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    transition: transform 0.2s, background 0.2s;
+}
+
+#btn-info:hover {
+    transform: scale(1.1);
+    background: #ffcb05;
+    color: #0b0f19;
+}
+
+/* Fundo Escuro do Modal */
+.modal-info {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 2000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 15px;
+    box-sizing: border-box;
+}
+
+/* Caixa de Conteúdo do Modal */
+.conteudo-modal-info {
+    background: #141821;
+    border: 2px solid #3c5aa6;
+    border-radius: 14px;
+    width: 100%;
+    max-width: 450px;
+    padding: 20px;
+    color: #fff;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.8);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    text-align: left;
+}
+
+.conteudo-modal-info h2 {
+    color: #ffcb05;
+    font-size: 1.2rem;
+    text-align: center;
+    border-bottom: 2px solid rgba(255,255,255,0.1);
+    padding-bottom: 8px;
+    margin: 0;
+}
+
+.conteudo-modal-info p, .conteudo-modal-info li {
+    font-size: 0.9rem;
+    color: #e2e8f0;
+    line-height: 1.4;
+}
+
+.conteudo-modal-info ul {
+    padding-left: 20px;
+    margin: 5px 0;
+}
+
+/* Botão de Fechar do Modal */
+.btn-fechar-info {
+    background: linear-gradient(to bottom, #ffcb05, #e5a900);
+    color: #1a2a6c;
+    border: none;
+    font-weight: bold;
+    padding: 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    margin-top: 5px;
+    transition: filter 0.2s;
+}
+
+.btn-fechar-info:hover {
+    filter: brightness(1.1);
+}

@@ -8,9 +8,27 @@
     <link rel="stylesheet" href="menu.style.css">
 </head>
 <body>
-
+    
 <div class="menu-container">
     <h2>Poke Lance</h2>
+
+    <!-- Botão de Informações / Ajuda -->
+<button id="btn-info" onclick="abrirModalInfo()" title="Como Jogar / Informações">ℹ️</button>
+
+<!-- Modal de Informações (Janela que abre ao clicar) -->
+<div id="modal-info" class="modal-info" style="display: none;">
+    <div class="conteudo-modal-info">
+        <h2>📖 Como Jogar - Leilão Pokémon</h2>
+        <p>Bem-vindo ao PokeDraft! Aqui estão as regras básicas para você vencer:</p>
+        <ul>
+            <li><strong>Sorteio:</strong> A cada rodada, um Pokémon aleatório aparece no centro da arena.</li>
+            <li><strong>Lances:</strong> Os Jogadores 1 e 2 dão seus lances usando o dinheiro disponível (R$). Quem der o maior lance ganha o Pokémon para o seu time!</li>
+            <li><strong>Loja de Itens:</strong> Ao final do leilão, você pode usar o dinheiro que sobrou para comprar itens e equipar seus Pokémon.</li>
+            <li><strong>Batalha:</strong> No fim, os times se enfrentarão automaticamente em um simulador de batalha baseado nos status dos Pokémon e itens equipados.</li>
+        </ul>
+        <button onclick="fecharModalInfo()" class="btn-fechar-info">Entendi, Fechar</button>
+    </div>
+</div>
 
     <!-- Seleção do Tipo de Conexão -->
     <div class="campo">
@@ -119,7 +137,22 @@
 
         // Redireciona para a tela do jogo
         window.location.href = "jogo.html"; 
-    }
+            }
+            // Função para abrir o painel de instruções
+        function abrirModalInfo() {
+            const modal = document.getElementById('modal-info');
+            if (modal) {
+                modal.style.display = 'flex';
+            }
+        }
+
+        // Função para fechar o painel de instruções
+        function fecharModalInfo() {
+            const modal = document.getElementById('modal-info');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        }
 </script>
 
 </body>
