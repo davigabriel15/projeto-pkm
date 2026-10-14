@@ -9,7 +9,7 @@
 }
 
 body {
-    overflow-y: hidden;
+    overflow-y: scroll;
     background-image: url(imagens/fundo_gengar.jpg);
     background-position: bottom;
     background-size: cover;
@@ -217,4 +217,47 @@ body {
 
 .btn-fechar-info:hover {
     filter: brightness(1.1);
+}
+/* Estilo da aba/carrossel horizontal compacto para os avatares */
+.carrossel-avatares {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto; /* Permite rolar para os lados caso tenha muitos avatares */
+    padding: 6px 4px;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    white-space: nowrap;
+}
+
+/* Deixa a barra de rolagem discreta */
+.carrossel-avatares::-webkit-scrollbar {
+    height: 4px;
+}
+.carrossel-avatares::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 4px;
+}
+
+/* Tamanho compacto e elegante de cada opção de avatar */
+.carrossel-avatares .avatar-opcao {
+    width: 45px;
+    height: 45px;
+    object-fit: contain;
+    background: #fff;
+    border: 2px solid #ccc;
+    border-radius: 6px;
+    padding: 3px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: transform 0.1s, border-color 0.2s;
+}
+
+.carrossel-avatares .avatar-opcao:hover {
+    transform: scale(1.05);
+}
+
+.carrossel-avatares .avatar-selecionado {
+    border: 3px solid #e3350d !important;
+    background: rgba(227, 53, 13, 0.1);
 }

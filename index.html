@@ -13,26 +13,26 @@
     <h2>Poke Lance</h2>
 
     <!-- Botão de Informações / Ajuda -->
-<button id="btn-info" onclick="abrirModalInfo()" title="Como Jogar / Informações">ℹ️</button>
+    <button id="btn-info" onclick="abrirModalInfo()" title="Como Jogar / Informações">ℹ️</button>
 
-<!-- Modal de Informações (Janela que abre ao clicar) -->
-<div id="modal-info" class="modal-info" style="display: none;">
-    <div class="conteudo-modal-info">
-        <h2>📖 Como Jogar - Leilão Pokémon</h2>
-        <p>Bem-vindo ao PokeLance! Aqui estão as regras básicas para você vencer:</p>
-        <ul>
-            <li><strong>Sorteio:</strong> A cada rodada, um Pokémon aleatório aparece no centro da arena.</li>
-            <li><strong>OBS: Antes de Sortear um novo Pokemon no Modo online, Espere um pouco para ver se seu amigo/advesario não se interessa e Oferece algum lance para o pokemon sorteado.</strong></li>
-            <li><strong>Lances:</strong> Os Jogadores 1 e 2 dão seus lances usando o dinheiro disponível (R$). Quem der o maior lance ganha o Pokémon para o seu time!</li>
-            <li><strong>Loja de Itens:</strong> Ao final do leilão, você pode usar o dinheiro que sobrou para comprar itens e equipar seus Pokémon.</li>
-            <li><strong>Batalha:</strong> No fim, os times se enfrentarão automaticamente em um simulador de batalha baseado nos status dos Pokémon e itens equipados.</li>
-            <li><strong>O site Pode Melhorar!</strong></li>
-            <li>Site desenvolvido Para Estudos de HTML CSS e JAVA SCRIPT</li>
-            <li><strong>Direitos reservados Para a NINTENDO E GAME FREAK</strong></li>
-        </ul>
-        <button onclick="fecharModalInfo()" class="btn-fechar-info">Entendi, Fechar</button>
+    <!-- Modal de Informações -->
+    <div id="modal-info" class="modal-info" style="display: none;">
+        <div class="conteudo-modal-info">
+            <h2>📖 Como Jogar - Leilão Pokémon</h2>
+            <p>Bem-vindo ao PokeLance! Aqui estão as regras básicas para você vencer:</p>
+            <ul>
+                <li><strong>Sorteio:</strong> A cada rodada, um Pokémon aleatório aparece no centro da arena.</li>
+                <li><strong>OBS: Antes de Sortear um novo Pokemon No Modo online, Espere um pouco para ver se seu amigo/advesario não se interessa e Oferece algum lance para o pokemon sorteado.</strong></li>
+                <li><strong>Lances:</strong> Os Jogadores 1 e 2 dão seus lances usando o dinheiro disponível (R$). Quem der o maior lance ganha o Pokémon para o seu time!</li>
+                <li><strong>Loja de Itens:</strong> Ao final do leilão, você pode usar o dinheiro que sobrou para comprar itens e equipar seus Pokémon.</li>
+                <li><strong>Batalha:</strong> No fim, os times se enfrentarão automaticamente em um simulador de batalha baseado nos status dos Pokémon e itens equipados.</li>
+                <li><strong>O site Pode Melhorar!</strong></li>
+                <li>Site desenvolvido Para Estudos de HTML CSS e JAVA SCRIPT</li>
+                <li><strong>Direitos reservados Para a NINTENDO E GAME FREAK</strong></li>
+            </ul>
+            <button onclick="fecharModalInfo()" class="btn-fechar-info">Entendi, Fechar</button>
+        </div>
     </div>
-</div>
 
     <!-- Seleção do Tipo de Conexão -->
     <div class="campo">
@@ -43,7 +43,7 @@
         </select>
     </div>
 
-    <!-- Regras do Leilão (Comum a ambos os modos) -->
+    <!-- Regras do Leilão -->
     <div class="campo">
         <label for="modo-jogo">Orçamento Inicial:</label>
         <select id="modo-jogo">
@@ -67,9 +67,30 @@
             <label for="nome-j1-local">Nome do Jogador 1:</label>
             <input type="text" id="nome-j1-local" placeholder="Ex: Messi" value="Jogador 1">
         </div>
+
+        <div class="campo">
+            <label for="select-avatar-j1">Treinador do Jogador 1:</label>
+            <select id="select-avatar-j1">
+                <option value="https://art.pixilart.com/2275c1b42ddf9d6.png">Red</option>
+                <option value="leaf.png">Leaf</option>
+                <option value="lucas.png">Lucas</option>
+                <option value="dawn.png">Dawn</option>
+            </select>
+        </div>
+        
         <div class="campo">
             <label for="nome-j2-local">Nome do Jogador 2:</label>
             <input type="text" id="nome-j2-local" placeholder="Ex: Cr7" value="Jogador 2">
+        </div>
+
+        <div class="campo">
+            <label for="select-avatar-j2">Treinador do Jogador 2:</label>
+            <select id="select-avatar-j2">
+                <option value="https://art.pixilart.com/2275c1b42ddf9d6.png">Red</option>
+                <option value="leaf.png">Leaf</option>
+                <option value="lucas.png" selected>Lucas</option>
+                <option value="dawn.png">Dawn</option>
+            </select>
         </div>
     </div>
 
@@ -79,6 +100,17 @@
             <label for="nome-online">Seu Nome:</label>
             <input type="text" id="nome-online" placeholder="Seu nome" value="Jogador">
         </div>
+
+        <div class="campo">
+            <label for="select-avatar-online">Seu Treinador:</label>
+            <select id="select-avatar-online">
+                <option value="https://art.pixilart.com/2275c1b42ddf9d6.png">Red</option>
+                <option value="leaf.png">Leaf</option>
+                <option value="lucas.png">Lucas</option>
+                <option value="dawn.png">Dawn</option>
+            </select>
+        </div>
+
         <div class="campo">
             <label for="codigo-sala-input">Código da Sala (Deixe em branco para criar uma):</label>
             <input type="text" id="codigo-sala-input" placeholder="Ex: SALA1">
@@ -108,56 +140,54 @@
         const modo = document.getElementById('modo-jogo').value;
         const estagio = document.getElementById('estagio-pkm').value;
 
-        // Salva as regras padrão do jogo
         localStorage.setItem('pkm_modo', modo);
         localStorage.setItem('pkm_estagio', estagio);
 
         if (tipoJogo === 'local') {
             const j1 = document.getElementById('nome-j1-local').value.trim() || "Jogador 1";
             const j2 = document.getElementById('nome-j2-local').value.trim() || "Jogador 2";
+            const spriteJ1 = document.getElementById('select-avatar-j1').value;
+            const spriteJ2 = document.getElementById('select-avatar-j2').value;
 
-            // Salva as configurações de 1 Tela
             localStorage.setItem('pkm_meu_nome', j1);
             localStorage.setItem('pkm_jogador1', j1);
             localStorage.setItem('pkm_jogador2', j2);
+            localStorage.setItem('pkm_sprite_j1', spriteJ1);
+            localStorage.setItem('pkm_sprite_j2', spriteJ2);
             
-            // Remove o ID de sala para garantir que o script entre no Modo Local
             localStorage.removeItem('pkm_sala_id');
 
         } else {
             const meuNome = document.getElementById('nome-online').value.trim() || "Jogador";
+            const spriteOnline = document.getElementById('select-avatar-online').value;
             let codigoSala = document.getElementById('codigo-sala-input').value.trim().toUpperCase();
 
-            // Se não informou a sala, gera um código aleatório de 4 letras
             if (!codigoSala) {
                 codigoSala = Math.random().toString(36).substring(2, 6).toUpperCase();
             }
 
-            // Salva as configurações do Modo Online
             localStorage.setItem('pkm_meu_nome', meuNome);
             localStorage.setItem('pkm_jogador1', meuNome);
+            localStorage.setItem('pkm_sprite_online', spriteOnline);
             localStorage.setItem('pkm_sala_id', codigoSala);
         }
 
-        // Redireciona para a tela do jogo
         window.location.href = "jogo.html"; 
-            }
-            // Função para abrir o painel de instruções
-        function abrirModalInfo() {
-            const modal = document.getElementById('modal-info');
-            if (modal) {
-                modal.style.display = 'flex';
-            }
-        }
+    }
 
-        // Função para fechar o painel de instruções
-        function fecharModalInfo() {
-            const modal = document.getElementById('modal-info');
-            if (modal) {
-                modal.style.display = 'none';
-            }
+    function abrirModalInfo() {
+        const modal = document.getElementById('modal-info');
+        if (modal) {
+            modal.style.display = 'flex';
         }
+    }
+
+    function fecharModalInfo() {
+        const modal = document.getElementById('modal-info');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    }
 </script>
-
 </body>
 </html>

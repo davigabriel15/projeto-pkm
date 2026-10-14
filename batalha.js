@@ -31,7 +31,6 @@ function calcularEfetividade(tipoAtacante, tipoDefensor) {
   return 1.0;
 }
 
-// Atualiza visualmente as Pokébolas na arena de batalha usando imagens reais e alinhamento horizontal (máx 3 por fileira)
 function atualizarIndicadorPokebolas(numJogador, timeLutadores, indiceAtual) {
   const container = document.getElementById(`pokebolas-j${numJogador}`);
   if (!container) return;
@@ -59,7 +58,6 @@ function atualizarIndicadorPokebolas(numJogador, timeLutadores, indiceAtual) {
   });
 }
 
-// Carrega os status de forma infalível, mapeando corretamente e preservando o estado de evolução (suporta múltiplas megas).
 async function carregarStatusPokemon(pkmOriginal) {
   try {
     const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${pkmOriginal.id}`);
@@ -167,15 +165,40 @@ async function carregarStatusPokemon(pkmOriginal) {
   }
 }
 
-async function iniciarBatalhaAutomatica(time1, time2, nome1, nome2) {
+async function iniciarBatalhaAutomatica(time1, time2, nome1, nome2, spriteJ1 = 'red.png', spriteJ2 = 'lucas.png') {
   const modal = document.getElementById('modal-batalha');
   const log = document.getElementById('log-batalha');
   if (modal) modal.style.display = 'flex';
 
+  let caminhoJ1 = spriteJ1.startsWith('http://') || spriteJ1.startsWith('https://') ? spriteJ1 : `imagens/treinadores/${spriteJ1}`;
+  let caminhoJ2 = spriteJ2.startsWith('http://') || spriteJ2.startsWith('https://') ? spriteJ2 : `imagens/treinadores/${spriteJ2}`;
+
+  // ==========================================
+  // PASSO 1: TREINADORES APARECEM NOS SLOTS DOS POKÉMONS
+  // ==========================================
   document.getElementById('batalha-nome-j1').innerText = nome1;
   document.getElementById('batalha-nome-j2').innerText = nome2;
 
-  log.innerHTML = "<p>⚔️ Sincronizando equipes e carregando status na arena...</p>";
+  const imgPkm1 = document.getElementById('batalha-img-pkm1');
+  const imgPkm2 = document.getElementById('batalha-img-pkm2');
+  const nomePkm1 = document.getElementById('batalha-nome-pkm1');
+  const nomePkm2 = document.getElementById('batalha-nome-pkm2');
+
+  // Coloca as imagens dos treinadores nos locais dos Pokémon
+  if (imgPkm1) imgPkm1.src = caminhoJ1;
+  if (imgPkm2) imgPkm2.src = caminhoJ2;
+  if (nomePkm1) nomePkm1.innerText = `Treinador ${nome1}`;
+  if (nomePkm2) nomePkm2.innerText = `Treinador ${nome2}`;
+
+  log.innerHTML = `<p style="color: #ffcb05; text-align: center; font-size: 16px;">⚔️ <strong>${nome1}</strong> vs <strong>${nome2}</strong>! Os treinadores estão prestes a escolher seus Pokémon...</p>`;
+
+  // Aguarda 3.5 segundos com os treinadores visíveis na arena
+  await new Promise(r => setTimeout(r, 3500));
+
+  // ==========================================
+  // PASSO 2: OS TREINADORES SOMEM E ENTRAM OS POKÉMON
+  // ==========================================
+  log.innerHTML = "<p>⚔️ O combate começou! Carregando as equipes...</p>";
 
   let lutadores1 = JSON.parse(JSON.stringify(await Promise.all(time1.map(async p => await carregarStatusPokemon(p)))));
   let lutadores2 = JSON.parse(JSON.stringify(await Promise.all(time2.map(async p => await carregarStatusPokemon(p)))));
@@ -189,11 +212,12 @@ async function iniciarBatalhaAutomatica(time1, time2, nome1, nome2) {
     atualizarIndicadorPokebolas(1, lutadores1, i);
     atualizarIndicadorPokebolas(2, lutadores2, j);
 
-    document.getElementById('batalha-img-pkm1').src = p1.jaMegaEvoluiu ? p1.imagemMega : p1.imagemBase;
-    document.getElementById('batalha-nome-pkm1').innerText = p1.jaMegaEvoluiu ? p1.nomeMega : p1.nomeBase;
+    // Substitui a imagem do treinador pelo primeiro Pokémon
+    if (imgPkm1) imgPkm1.src = p1.jaMegaEvoluiu ? p1.imagemMega : p1.imagemBase;
+    if (nomePkm1) nomePkm1.innerText = p1.jaMegaEvoluiu ? p1.nomeMega : p1.nomeBase;
     
-    document.getElementById('batalha-img-pkm2').src = p2.jaMegaEvoluiu ? p2.imagemMega : p2.imagemBase;
-    document.getElementById('batalha-nome-pkm2').innerText = p2.jaMegaEvoluiu ? p2.nomeMega : p2.nomeBase;
+    if (imgPkm2) imgPkm2.src = p2.jaMegaEvoluiu ? p2.imagemMega : p2.imagemBase;
+    if (nomePkm2) nomePkm2.innerText = p2.jaMegaEvoluiu ? p2.nomeMega : p2.nomeBase;
 
     log.innerHTML += `<hr style="border: 0; border-top: 1px solid #444; margin: 8px 0;">`;
     log.innerHTML += `<p style="color: #ffcb05;"><strong>Entram na arena:</strong> ${p1.jaMegaEvoluiu ? p1.nomeMega : p1.nomeBase} vs ${p2.jaMegaEvoluiu ? p2.nomeMega : p2.nomeBase}!</p>`;
@@ -254,9 +278,24 @@ async function iniciarBatalhaAutomatica(time1, time2, nome1, nome2) {
     log.scrollTop = log.scrollHeight;
   }
 
+  // ==========================================
+  // PASSO 3: TELA DE VITÓRIA FINAL
+  // ==========================================
   const vencedor = i < lutadores1.length ? nome1 : nome2;
-  log.innerHTML += `<hr style="border: 0; border-top: 2px solid #ffcb05; margin: 10px 0;">`;
-  log.innerHTML += `<h3 style="color: #4caf50; font-size: 18px; text-align: center;">🏆 FIM DE JOGO! ${vencedor} VENCEU A BATALHA!</h3>`;
+  const spriteVencedor = i < lutadores1.length ? spriteJ1 : spriteJ2;
+
+  let caminhoSpriteVencedorFinal = spriteVencedor.startsWith('http://') || spriteVencedor.startsWith('https://') 
+    ? spriteVencedor 
+    : `imagens/treinadores/${spriteVencedor}`;
+
+  log.innerHTML = `
+    <div style="text-align: center; padding: 25px;">
+      <h2 style="color: #ffcb05; font-size: 20px; margin-bottom: 10px;">🏆 FIM DE JOGO 🏆</h2>
+      <img src="${caminhoSpriteVencedorFinal}" alt="Vencedor" style="width: 100px; height: 100px; object-fit: contain; filter: drop-shadow(0 0 15px gold); animation: tremer 0.5s infinite; margin: 10px auto; display: block;">
+      <h3 style="color: #4caf50; font-size: 22px; margin-top: 10px;">${vencedor} VENCEU A BATALHA!</h3>
+      <p style="color: #ccc; font-size: 14px; margin-top: 5px;">Parabéns pela grande vitória no leilão e na arena!</p>
+    </div>
+  `;
   log.scrollTop = log.scrollHeight;
 
   const btnFechar = document.getElementById('btn-fechar-batalha');
@@ -270,7 +309,6 @@ async function dispararAnimacaoMega(numCombatente, pkmObj, logElemento) {
   if (imgElem && imgElem.parentElement) {
     imgElem.parentElement.style.position = "relative";
 
-    // Cria a imagem PNG flutuante do símbolo da Mega Evolução
     const iconeMegaPng = document.createElement('img');
     iconeMegaPng.src = "imagens/mega_simbolo.png"; 
     iconeMegaPng.style.cssText = "position: absolute; top: -35px; left: 50%; transform: translateX(-50%) scale(0); width: 100px; height: 100px; object-fit: contain; filter: drop-shadow(0 0 8px gold); z-index: 100; transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s ease;";
@@ -339,7 +377,6 @@ function aplicarEfeitosPassivosTurno(combatente, numCombatente, logElemento) {
   }
 }
 
-// Executa o ataque com inteligência de tipagem dupla (avalia todos os tipos do atacante e escolhe o melhor)
 function executarAtaqueTurno(atacante, defensor, numeroDefensor, logElemento) {
   let danoBase = Math.max(12, Math.floor(atacante.ataque * 0.55 - defensor.defesa * 0.2));
 

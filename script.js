@@ -7,13 +7,16 @@ let codigoSala = localStorage.getItem('pkm_sala_id') || "";
 let modoJogo = localStorage.getItem('pkm_modo') || "padrao";
 let estagioEvolucao = localStorage.getItem('pkm_estagio') || "normal";
 
+let minhaSpriteOnline = localStorage.getItem('pkm_sprite_online') || 'red.png';
+let spriteLocalJ1 = localStorage.getItem('pkm_sprite_j1') || 'red.png';
+let spriteLocalJ2 = localStorage.getItem('pkm_sprite_j2') || 'lucas.png';
+
 let saldoInicial = modoJogo === "pobre" ? 20 : 100;
-let meuNumeroJogador = null; // 1 ou 2 (Online)
+let meuNumeroJogador = null; 
 
 let database = null;
 let salaRef = null;
 
-// Controle do Leilão para MODO LOCAL (1 Tela)
 let leilaoAtual = {
   pokemon: null,
   lanceAtual: 0,
@@ -42,7 +45,6 @@ document.addEventListener("DOMContentLoaded", () => {
   exibirCodigoSala();
 
   if (salaRef) {
-    // MODO ONLINE
     salaRef.once("value").then((snapshot) => {
       const dados = snapshot.val() || {};
       const agora = Date.now();
@@ -58,6 +60,7 @@ document.addEventListener("DOMContentLoaded", () => {
         meuNumeroJogador = 1;
         salaRef.update({
           jogador1: meuNome,
+          sprite1: minhaSpriteOnline,
           saldoJ1: saldoInicial,
           time1: [],
           time1Organizado: null,
@@ -67,11 +70,12 @@ document.addEventListener("DOMContentLoaded", () => {
         });
       } else if (dados.jogador1 === meuNome) {
         meuNumeroJogador = 1;
-        salaRef.update({ ultimaAtualizacao: agora });
+        salaRef.update({ sprite1: minhaSpriteOnline, ultimaAtualizacao: agora });
       } else if (!dados.jogador2) {
         meuNumeroJogador = 2;
         salaRef.update({
           jogador2: meuNome,
+          sprite2: minhaSpriteOnline,
           saldoJ2: saldoInicial,
           time2: [],
           time2Organizado: null,
@@ -79,11 +83,12 @@ document.addEventListener("DOMContentLoaded", () => {
         });
       } else if (dados.jogador2 === meuNome) {
         meuNumeroJogador = 2;
-        salaRef.update({ ultimaAtualizacao: agora });
+        salaRef.update({ sprite2: minhaSpriteOnline, ultimaAtualizacao: agora });
       } else {
         meuNumeroJogador = 2;
         salaRef.update({ 
           jogador2: meuNome,
+          sprite2: minhaSpriteOnline,
           ultimaAtualizacao: agora 
         });
       }
@@ -92,7 +97,6 @@ document.addEventListener("DOMContentLoaded", () => {
       escutarAtualizacoesSala();
     });
   } else {
-    // MODO LOCAL (1 Tela)
     configurarBotoesPorModo(false);
     configurarModoLocal();
   }
@@ -207,7 +211,7 @@ function escutarAtualizacoesSala() {
 
         const modalBatalha = document.getElementById('modal-batalha');
         if (modalBatalha && modalBatalha.style.display !== 'flex') {
-          iniciarBatalhaAutomatica(time1Pronto, time2Pronto, nomeJ1, nomeJ2);
+          iniciarBatalhaAutomatica(time1Pronto, time2Pronto, nomeJ1, nomeJ2, dados.sprite1 || 'red.png', dados.sprite2 || 'lucas.png');
         }
       } else {
         const jaEnvieiOrdem = meuNumeroJogador === 1 ? dados.time1Organizado : dados.time2Organizado;
@@ -693,7 +697,7 @@ function confirmarOrdemTime() {
         window.time1OrganizadoLocal = null;
         window.time1ComItensLocal = null;
 
-        iniciarBatalhaAutomatica(time1Pronto, time2Pronto, meuNome, nomeJ2Local);
+        iniciarBatalhaAutomatica(time1Pronto, time2Pronto, meuNome, nomeJ2Local, spriteLocalJ1, spriteLocalJ2);
       });
     }
   }
@@ -707,7 +711,6 @@ let saldoAtualJogador = 0;
 let meuTimeLoja = [];
 let callbackFimDaLoja = null;
 
-// Função Universal baseada na PokéAPI para verificar Mega Evolução (substitui a lista fixa antiga)
 async function podeUsarMegaStoneUniversal(pokemonId) {
   try {
     const resEspecie = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${pokemonId}/`);
@@ -770,7 +773,6 @@ async function equiparItemNoSlot(index) {
     return;
   }
 
-  // Se o item for a Mega Stone, faz a verificação assíncrona universal via API
   if (carrinhoItemSelecionado === 'Mega Stone') {
     const pkmAlvo = meuTimeLoja[index];
     const aceitaMega = await podeUsarMegaStoneUniversal(pkmAlvo.id);
@@ -823,35 +825,36 @@ function finalizarLoja() {
     callbackTemp(meuTimeLoja, saldoAtualJogador);
   }
 }
-    
-    const musicas = [
-    "https://jetta.vgmtreasurechest.com/soundtracks/pokemon-diamond-and-pearl-super-music-collection/qmpllzli/2-67.%20Battle%21%20%28Champion%29.mp3", "https://nu.vgmtreasurechest.com/soundtracks/pokemon-heartgold-and-soulsilver-game-boy/prpyyuen/105%20Battle%21%20Champion.mp3", "https://jetta.vgmtreasurechest.com/soundtracks/pok%C3%A9mon-firered-leafgreen-restored-soundtrack-2004/xpiyiezjom/70.%20Final%20Battle%21%20%28Rival%29.mp3","https://jetta.vgmtreasurechest.com/soundtracks/pokemon-ruby-sapphire-and-emerald-remastered-soundtrack-gba-gamerip-2002-2005/jorspudi/49.%20Pokemon%20League%20Master-Champion%20Battle.mp3"
-    ];
 
-    const audio = document.getElementById("musica");
+// ==========================================
+// 9. TRILHA SONORA ALEATÓRIA
+// ==========================================
+const musicas = [
+  "https://jetta.vgmtreasurechest.com/soundtracks/pokemon-diamond-and-pearl-super-music-collection/qmpllzli/2-67.%20Battle%21%20%28Champion%29.mp3", 
+  "https://nu.vgmtreasurechest.com/soundtracks/pokemon-heartgold-and-soulsilver-game-boy/prpyyuen/105%20Battle%21%20Champion.mp3", 
+  "https://jetta.vgmtreasurechest.com/soundtracks/pok%C3%A9mon-firered-leafgreen-restored-soundtrack-2004/xpiyiezjom/70.%20Final%20Battle%21%20%28Rival%29.mp3",
+  "https://jetta.vgmtreasurechest.com/soundtracks/pokemon-ruby-sapphire-and-emerald-remastered-soundtrack-gba-gamerip-2002-2005/jorspudi/49.%20Pokemon%20League%20Master-Champion%20Battle.mp3"
+];
 
-    let musicaAnterior = -1;
+const audio = document.getElementById("musica");
+let musicaAnterior = -1;
 
-    function sortearMusica() {
-    let sorteada;
+function sortearMusica() {
+  let sorteada;
+  do {
+    sorteada = Math.floor(Math.random() * musicas.length);
+  } while (musicas.length > 1 && sorteada === musicaAnterior);
 
-    do {
-        sorteada = Math.floor(Math.random() * musicas.length);
-    } while (
-        musicas.length > 1 &&
-        sorteada === musicaAnterior
-    );
-
-    musicaAnterior = sorteada;
-
+  musicaAnterior = sorteada;
+  if (audio) {
     audio.src = musicas[sorteada];
     audio.play().catch(() => {
-        console.log("O navegador bloqueou a reprodução automática.");
+      console.log("O navegador bloqueou a reprodução automática até a interação.");
     });
-    }
+  }
+}
 
-    // Sorteia uma música quando o site abre
-    sortearMusica();
-
-    // Sorteia outra quando a atual termina
-    audio.addEventListener("ended", sortearMusica);
+if (audio) {
+  sortearMusica();
+  audio.addEventListener("ended", sortearMusica);
+}
