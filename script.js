@@ -825,7 +825,7 @@ function finalizarLoja() {
 }
     
     const musicas = [
-    "https://jetta.vgmtreasurechest.com/soundtracks/pokemon-diamond-and-pearl-super-music-collection/qmpllzli/2-67.%20Battle%21%20%28Champion%29.mp3", "https://nu.vgmtreasurechest.com/soundtracks/pokemon-heartgold-and-soulsilver-game-boy/prpyyuen/105%20Battle%21%20Champion.mp3", "https://jetta.vgmtreasurechest.com/soundtracks/pok%C3%A9mon-firered-leafgreen-restored-soundtrack-2004/xpiyiezjom/70.%20Final%20Battle%21%20%28Rival%29.mp3"
+    "https://jetta.vgmtreasurechest.com/soundtracks/pokemon-diamond-and-pearl-super-music-collection/qmpllzli/2-67.%20Battle%21%20%28Champion%29.mp3", "https://nu.vgmtreasurechest.com/soundtracks/pokemon-heartgold-and-soulsilver-game-boy/prpyyuen/105%20Battle%21%20Champion.mp3", "https://jetta.vgmtreasurechest.com/soundtracks/pok%C3%A9mon-firered-leafgreen-restored-soundtrack-2004/xpiyiezjom/70.%20Final%20Battle%21%20%28Rival%29.mp3","https://jetta.vgmtreasurechest.com/soundtracks/pokemon-ruby-sapphire-and-emerald-remastered-soundtrack-gba-gamerip-2002-2005/jorspudi/49.%20Pokemon%20League%20Master-Champion%20Battle.mp3"
     ];
 
     const audio = document.getElementById("musica");
