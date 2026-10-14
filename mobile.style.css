@@ -9,7 +9,8 @@
 
 body {
     overflow-y: hidden;
-    background-image: url(imagens/plano_de_fundo.webp);
+    background-image: url(imagens/fundo_rayquaza.png);
+    background-position: center center;
     background-size: cover;
     display: grid;
     width: 100vw;
@@ -20,7 +21,9 @@ body {
 
 /* Logo do Site */
 .logo {
-    background-color: rgba(255, 255, 255, 0.589);
+    background: linear-gradient(135deg, rgba(20, 24, 33, 0.95), rgba(35, 42, 60, 0.95));
+    border-bottom: 1px solid #ffcb05;
+    border-radius: 0px 0px 10px 10px;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -28,10 +31,12 @@ body {
     grid-area: 1 / 1 / 2 / -1;
 }
 .logo > img {
-    width: 100px;
+    width: 90px;
+    filter: drop-shadow(0 0 8px rgba(214, 211, 197, 0.7));
 }
 .topo-sala{
     font-size: 0.5em;
+    color: white;
 }
 
 /* Container do Pokémon central */
@@ -40,9 +45,9 @@ body {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    background-color: rgba(255, 255, 255, 0.788);
-    border-radius: 12px;
-    border: 2px solid #333;
+    background: rgba(22, 27, 38, 0.92);
+    border: 1px solid #ffcb05;
+    border-radius: 14px;
     grid-area: 2 / 2 / 4 / 3;
     padding: 10px;
     overflow: hidden;
@@ -61,7 +66,7 @@ body {
     margin: 6px 0;
     text-align: center;
     font-weight: bold;
-    color: #333;
+    color: white;
 }
 
 /* Botão de Sortear */
@@ -93,9 +98,9 @@ body {
     align-content: flex-start;  /* Alinha no topo */
     gap: 6px;                   /* Espaço entre cada Pokémon */
     margin: 3px;
-    background-color: rgba(240, 128, 128, 0.87);
-    border: 1px solid black;
-    border-radius: 10px;
+    background: rgba(18, 22, 31, 0.85);
+    border: 2px solid #3c5aa6;
+    border-radius: 12px;
     grid-area: 2 / 1 / 5 / 2;
     padding: 8px;
     overflow-y: auto;
@@ -109,9 +114,9 @@ body {
     align-content: flex-start;
     gap: 6px;
     margin: 3px;
-    background-color: rgba(240, 128, 128, 0.87);
-    border: 1px solid black;
-    border-radius: 10px;
+    background: rgba(18, 22, 31, 0.85);
+    border: 1px solid #e53935;
+    border-radius: 12px;
     grid-area: 2 / 3 / 5 / 4;
     padding: 8px;
     overflow-y: auto;
@@ -123,7 +128,7 @@ body {
     text-align: center;
     font-size: 1rem;
     margin-bottom: 6px;
-    color: #333;
+    color: white;
 }
 
 /* Imagens dos Pokémon dentro dos times */
@@ -141,8 +146,8 @@ body {
 .dinheiro-rest-1 {
     color: #28a745;
     font-weight: bolder;
-    background-color: white;
-    border: 1px solid black;
+    background: rgba(20, 24, 33, 0.9);
+    border: 2px solid #28a745;
     border-radius: 10px;
     margin: 3px;
     display: flex;
@@ -154,8 +159,8 @@ body {
 .dinheiro-rest-2 {
     color: #28a745;
     font-weight: bolder;
-    background-color: white;
-    border: 1px solid black;
+    background: rgba(20, 24, 33, 0.9);
+    border: 2px solid #28a745;
     border-radius: 10px;
     margin: 3px;
     display: flex;
@@ -170,9 +175,9 @@ body {
 
 /* Lances */
 .lance {
-    background-color: rgba(255, 255, 255, 0.788);
-    border: 1px solid black;
-    border-radius: 10px;
+    background: rgba(22, 27, 38, 0.92);
+    border: 1px solid yellow;
+    border-radius: 12px;
     margin: 3px;
     display: flex;
     flex-direction: column;
@@ -180,6 +185,7 @@ body {
     align-items: center;
     grid-area: 4 / 2 / 5 / 3;
     padding: 5px;
+    color: white;
 }
 
 .lance > input[type="number"] {
@@ -238,14 +244,15 @@ body {
 /* Container da situação */
 .situacao {
     margin-bottom: 5px;
-    background-color: white;
-    border: 1px solid black;
+    background: rgba(20, 24, 33, 0.9);
+    border: 2px solid #3c5aa6;
     border-radius: 10px;
     display: flex;
     justify-content: center;
     align-items: center;
     grid-area: 5 / 2 / 6 / 3;
     padding: 8px 12px;
+    color: white;
 }
 
 .situacao > p {
@@ -339,7 +346,7 @@ body {
     body{
         background-image: url(imagens/fundo_rayquaza.png);
         background-size: cover;
-        background-position: bottom left;
+        background-position: center center;
     }
     
 }
