@@ -7,9 +7,9 @@ let codigoSala = localStorage.getItem('pkm_sala_id') || "";
 let modoJogo = localStorage.getItem('pkm_modo') || "padrao";
 let estagioEvolucao = localStorage.getItem('pkm_estagio') || "normal";
 
-let minhaSpriteOnline = localStorage.getItem('pkm_sprite_online') || 'red.png';
-let spriteLocalJ1 = localStorage.getItem('pkm_sprite_j1') || 'red.png';
-let spriteLocalJ2 = localStorage.getItem('pkm_sprite_j2') || 'lucas.png';
+let minhaSpriteOnline = localStorage.getItem('pkm_sprite_online') || 'https://art.pixilart.com/2275c1b42ddf9d6.png';
+let spriteLocalJ1 = localStorage.getItem('pkm_sprite_j1') || 'https://art.pixilart.com/2275c1b42ddf9d6.png';
+let spriteLocalJ2 = localStorage.getItem('pkm_sprite_j2') || 'https://preview.redd.it/lucas-plaitnum-protag-sprite-port-v0-46s668hw333b1.png?width=160&format=png&auto=webp&s=45b6826113e2f71639ff03e8fd0e4205603e21cf';
 
 let saldoInicial = modoJogo === "pobre" ? 20 : 100;
 let meuNumeroJogador = null; 

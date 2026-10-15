@@ -170,8 +170,15 @@ async function iniciarBatalhaAutomatica(time1, time2, nome1, nome2, spriteJ1 = '
   const log = document.getElementById('log-batalha');
   if (modal) modal.style.display = 'flex';
 
-  let caminhoJ1 = spriteJ1.startsWith('http://') || spriteJ1.startsWith('https://') ? spriteJ1 : `imagens/treinadores/${spriteJ1}`;
-  let caminhoJ2 = spriteJ2.startsWith('http://') || spriteJ2.startsWith('https://') ? spriteJ2 : `imagens/treinadores/${spriteJ2}`;
+  // Blindagem contra caminhos duplicados ou corrompidos
+  let limparCaminho = (sprite) => {
+    if (sprite.startsWith('http://') || sprite.startsWith('https://')) return sprite;
+    let nomeArquivo = sprite.replace(/^(imagens\/treinadores\/)+/, '');
+    return `imagens/treinadores/${nomeArquivo}`;
+  };
+
+  let caminhoJ1 = limparCaminho(spriteJ1);
+  let caminhoJ2 = limparCaminho(spriteJ2);
 
   // ==========================================
   // PASSO 1: TREINADORES APARECEM NOS SLOTS (TAMANHO PADRONIZADO)
@@ -301,9 +308,7 @@ async function iniciarBatalhaAutomatica(time1, time2, nome1, nome2, spriteJ1 = '
   const vencedor = i < lutadores1.length ? nome1 : nome2;
   const spriteVencedor = i < lutadores1.length ? spriteJ1 : spriteJ2;
 
-  let caminhoSpriteVencedorFinal = spriteVencedor.startsWith('http://') || spriteVencedor.startsWith('https://') 
-    ? spriteVencedor 
-    : `imagens/treinadores/${spriteVencedor}`;
+  let caminhoSpriteVencedorFinal = limparCaminho(spriteVencedor);
 
   log.innerHTML = `
     <div style="text-align: center; padding: 25px;">
