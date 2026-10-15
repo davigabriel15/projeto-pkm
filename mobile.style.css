@@ -342,6 +342,17 @@ body {
   display: block;
   margin-top: auto; /* Empurra o preço/botão sempre para a base do card */
 }
+/* Força qualquer imagem na arena de batalha a respeitar o mesmo bloco fixo */
+#batalha-img-pkm1, #batalha-img-pkm2 {
+  width: 120px !important;
+  height: 120px !important;
+  max-width: 120px !important;
+  max-height: 120px !important;
+  object-fit: contain !important;
+  object-position: center !important;
+  display: block !important;
+  margin: 0 auto !important;
+}
 @media screen and (min-width: 360px) {
     body{
         background-image: url(imagens/fundo_rayquaza.png);

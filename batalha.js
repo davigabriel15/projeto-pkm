@@ -174,7 +174,7 @@ async function iniciarBatalhaAutomatica(time1, time2, nome1, nome2, spriteJ1 = '
   let caminhoJ2 = spriteJ2.startsWith('http://') || spriteJ2.startsWith('https://') ? spriteJ2 : `imagens/treinadores/${spriteJ2}`;
 
   // ==========================================
-  // PASSO 1: TREINADORES APARECEM NOS SLOTS DOS POKÉMONS
+  // PASSO 1: TREINADORES APARECEM NOS SLOTS (TAMANHO PADRONIZADO)
   // ==========================================
   document.getElementById('batalha-nome-j1').innerText = nome1;
   document.getElementById('batalha-nome-j2').innerText = nome2;
@@ -184,19 +184,27 @@ async function iniciarBatalhaAutomatica(time1, time2, nome1, nome2, spriteJ1 = '
   const nomePkm1 = document.getElementById('batalha-nome-pkm1');
   const nomePkm2 = document.getElementById('batalha-nome-pkm2');
 
-  // Coloca as imagens dos treinadores nos locais dos Pokémon
-  if (imgPkm1) imgPkm1.src = caminhoJ1;
-  if (imgPkm2) imgPkm2.src = caminhoJ2;
+  if (imgPkm1) {
+    imgPkm1.src = caminhoJ1;
+    imgPkm1.style.width = "130px";
+    imgPkm1.style.height = "130px";
+    imgPkm1.style.objectFit = "contain";
+  }
+  if (imgPkm2) {
+    imgPkm2.src = caminhoJ2;
+    imgPkm2.style.width = "130px";
+    imgPkm2.style.height = "130px";
+    imgPkm2.style.objectFit = "contain";
+  }
   if (nomePkm1) nomePkm1.innerText = `Treinador ${nome1}`;
   if (nomePkm2) nomePkm2.innerText = `Treinador ${nome2}`;
 
   log.innerHTML = `<p style="color: #ffcb05; text-align: center; font-size: 16px;">⚔️ <strong>${nome1}</strong> vs <strong>${nome2}</strong>! Os treinadores estão prestes a escolher seus Pokémon...</p>`;
 
-  // Aguarda 3.5 segundos com os treinadores visíveis na arena
   await new Promise(r => setTimeout(r, 3500));
 
   // ==========================================
-  // PASSO 2: OS TREINADORES SOMEM E ENTRAM OS POKÉMON
+  // PASSO 2: OS POKÉMON ENTRAM NA ARENA (TAMANHO PADRONIZADO)
   // ==========================================
   log.innerHTML = "<p>⚔️ O combate começou! Carregando as equipes...</p>";
 
@@ -212,11 +220,20 @@ async function iniciarBatalhaAutomatica(time1, time2, nome1, nome2, spriteJ1 = '
     atualizarIndicadorPokebolas(1, lutadores1, i);
     atualizarIndicadorPokebolas(2, lutadores2, j);
 
-    // Substitui a imagem do treinador pelo primeiro Pokémon
-    if (imgPkm1) imgPkm1.src = p1.jaMegaEvoluiu ? p1.imagemMega : p1.imagemBase;
+    if (imgPkm1) {
+      imgPkm1.src = p1.jaMegaEvoluiu ? p1.imagemMega : p1.imagemBase;
+      imgPkm1.style.width = "130px";
+      imgPkm1.style.height = "130px";
+      imgPkm1.style.objectFit = "contain";
+    }
     if (nomePkm1) nomePkm1.innerText = p1.jaMegaEvoluiu ? p1.nomeMega : p1.nomeBase;
     
-    if (imgPkm2) imgPkm2.src = p2.jaMegaEvoluiu ? p2.imagemMega : p2.imagemBase;
+    if (imgPkm2) {
+      imgPkm2.src = p2.jaMegaEvoluiu ? p2.imagemMega : p2.imagemBase;
+      imgPkm2.style.width = "130px";
+      imgPkm2.style.height = "130px";
+      imgPkm2.style.objectFit = "contain";
+    }
     if (nomePkm2) nomePkm2.innerText = p2.jaMegaEvoluiu ? p2.nomeMega : p2.nomeBase;
 
     log.innerHTML += `<hr style="border: 0; border-top: 1px solid #444; margin: 8px 0;">`;
@@ -279,7 +296,7 @@ async function iniciarBatalhaAutomatica(time1, time2, nome1, nome2, spriteJ1 = '
   }
 
   // ==========================================
-  // PASSO 3: TELA DE VITÓRIA FINAL
+  // PASSO 3: TELA DE VITÓRIA FINAL (TAMANHO PADRONIZADO)
   // ==========================================
   const vencedor = i < lutadores1.length ? nome1 : nome2;
   const spriteVencedor = i < lutadores1.length ? spriteJ1 : spriteJ2;
@@ -291,7 +308,7 @@ async function iniciarBatalhaAutomatica(time1, time2, nome1, nome2, spriteJ1 = '
   log.innerHTML = `
     <div style="text-align: center; padding: 25px;">
       <h2 style="color: #ffcb05; font-size: 20px; margin-bottom: 10px;">🏆 FIM DE JOGO 🏆</h2>
-      <img src="${caminhoSpriteVencedorFinal}" alt="Vencedor" style="width: 100px; height: 100px; object-fit: contain; filter: drop-shadow(0 0 15px gold); animation: tremer 0.5s infinite; margin: 10px auto; display: block;">
+      <img src="${caminhoSpriteVencedorFinal}" alt="Vencedor" style="width: 130px; height: 130px; object-fit: contain; filter: drop-shadow(0 0 15px gold); animation: tremer 0.5s infinite; margin: 10px auto; display: block;">
       <h3 style="color: #4caf50; font-size: 22px; margin-top: 10px;">${vencedor} VENCEU A BATALHA!</h3>
       <p style="color: #ccc; font-size: 14px; margin-top: 5px;">Parabéns pela grande vitória no leilão e na arena!</p>
     </div>
